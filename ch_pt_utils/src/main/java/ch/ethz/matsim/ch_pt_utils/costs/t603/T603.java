@@ -135,10 +135,14 @@ public class T603 {
 		double minimumDistance = Double.POSITIVE_INFINITY;
 
 		for (Triangle triangle : commonTriangles) {
-			double distance = triangle.getDirectDistance(Edge.of(originStation, destinationStation));
+			Edge<Station> distanceEdge = Edge.of(originStation, destinationStation);
 
-			if (distance < minimumDistance) {
-				minimumDistance = distance;
+			if (triangle.hasDirectDistance(distanceEdge)) {
+				double distance = triangle.getDirectDistance(Edge.of(originStation, destinationStation));
+
+				if (distance < minimumDistance) {
+					minimumDistance = distance;
+				}
 			}
 		}
 
@@ -258,20 +262,29 @@ public class T603 {
 				boolean isLastConnection = currentRoute.size() == triangleRoute.size();
 
 				for (StationEdge connection : connections) {
-					double connectingDistance = connection.getSourceTriangle().getDirectDistance(
-							Edge.of(currentRoute.getLastStation(), connection.getConnectingStation()));
-					StationRoute newRoute = currentRoute.extend(connection.getConnectingStation(), connectingDistance);
+					Edge<Station> distanceEdge = Edge.of(currentRoute.getLastStation(),
+							connection.getConnectingStation());
 
-					if (isLastConnection) {
-						double lastDistance = connection.getTargetTriangle()
-								.getDirectDistance(Edge.of(newRoute.getLastStation(), destinationStation));
-						StationRoute finalRoute = newRoute.extend(destinationStation, lastDistance);
+					if (connection.getSourceTriangle().hasDirectDistance(distanceEdge)) {
+						double connectingDistance = connection.getSourceTriangle().getDirectDistance(distanceEdge);
+						StationRoute newRoute = currentRoute.extend(connection.getConnectingStation(),
+								connectingDistance);
 
-						if (finalRoute.distance < minimumDistanceRoute.distance) {
-							minimumDistanceRoute = finalRoute;
+						if (isLastConnection) {
+							Edge<Station> lastDistanceEdge = Edge.of(newRoute.getLastStation(), destinationStation);
+
+							if (connection.getTargetTriangle().hasDirectDistance(lastDistanceEdge)) {
+								double lastDistance = connection.getTargetTriangle()
+										.getDirectDistance(lastDistanceEdge);
+								StationRoute finalRoute = newRoute.extend(destinationStation, lastDistance);
+
+								if (finalRoute.distance < minimumDistanceRoute.distance) {
+									minimumDistanceRoute = finalRoute;
+								}
+							}
+						} else if (newRoute.distance < minimumDistanceRoute.distance) {
+							pending.add(newRoute);
 						}
-					} else if (newRoute.distance < minimumDistanceRoute.distance) {
-						pending.add(newRoute);
 					}
 				}
 			}
@@ -285,11 +298,17 @@ public class T603 {
 		commonTriangles.addAll(originStation.getTriangles());
 		commonTriangles.retainAll(destinationStation.getTriangles());
 
+		double directDistance = Double.POSITIVE_INFINITY;
+
 		if (commonTriangles.size() > 0) {
-			return computeDirectDistance(originStation, destinationStation, commonTriangles);
-		} else {
-			return computeRoutedDistance(originStation, destinationStation);
+			directDistance = computeDirectDistance(originStation, destinationStation, commonTriangles);
 		}
+
+		if (Double.isFinite(directDistance)) {
+			return directDistance;
+		}
+
+		return computeRoutedDistance(originStation, destinationStation);
 	}
 
 	public static T603 read(File path) throws JsonParseException, JsonMappingException, IOException {
@@ -340,9 +359,15 @@ public class T603 {
 		return new T603(triangles, stations);
 	}
 
-	public double computePrice(double distance) {
+	public double computePrice(double distance, boolean halfFare) {
 		int intDistance = (int) distance;
-		return priceTable[intDistance];
+		double fullPrice = priceTable[intDistance];
+
+		if (halfFare) {
+			return 0.5 * fullPrice;
+		} else {
+			return fullPrice;
+		}
 	}
 
 	public Map<String, Triangle> getTriangles() {

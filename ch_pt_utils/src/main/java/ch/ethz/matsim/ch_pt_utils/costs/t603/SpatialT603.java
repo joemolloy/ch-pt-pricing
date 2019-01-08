@@ -22,17 +22,18 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
+import ch.ethz.matsim.ch_pt_utils.costs.t603.data.SpatialStation;
 import ch.ethz.matsim.ch_pt_utils.costs.t603.data.Station;
 import ch.ethz.matsim.ch_pt_utils.costs.t603.raw.RawHafasStation;
 
 public class SpatialT603 {
-	private final QuadTree<Station> stations;
+	private final QuadTree<SpatialStation> stations;
 
-	private SpatialT603(QuadTree<Station> stations) {
+	private SpatialT603(QuadTree<SpatialStation> stations) {
 		this.stations = stations;
 	}
 
-	public Station getClosestStation(Coord coord) {
+	public SpatialStation getClosestStation(Coord coord) {
 		return stations.getClosest(coord.getX(), coord.getY());
 	}
 
@@ -104,19 +105,9 @@ public class SpatialT603 {
 		double minY = spatialStations.stream().mapToDouble(s -> s.coord.getY()).min().getAsDouble();
 		double maxY = spatialStations.stream().mapToDouble(s -> s.coord.getY()).max().getAsDouble();
 
-		QuadTree<Station> tree = new QuadTree<>(minX, minY, maxX, maxY);
-		spatialStations.forEach(s -> tree.put(s.coord.getX(), s.coord.getY(), s.station));
+		QuadTree<SpatialStation> tree = new QuadTree<>(minX, minY, maxX, maxY);
+		spatialStations.forEach(s -> tree.put(s.coord.getX(), s.coord.getY(), s));
 
 		return new SpatialT603(tree);
-	}
-
-	static private class SpatialStation {
-		public final Station station;
-		public final Coord coord;
-
-		public SpatialStation(Station station, Coord coord) {
-			this.station = station;
-			this.coord = coord;
-		}
 	}
 }

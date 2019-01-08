@@ -52,6 +52,10 @@ public class Triangle {
 			throw new IllegalStateException(String.format("Direct distance %s does not exist for %s", edge, this));
 		}
 	}
+	
+	public boolean hasDirectDistance(Edge<Station> edge) {
+		return directDistances.containsKey(edge);
+	}
 
 	@Override
 	public boolean equals(Object other) {
