@@ -23,6 +23,28 @@
 		</repository>
 	</repositories>
 
+
+	<distributionManagement>
+		<repository>
+			<id>matsim-eth</id>
+			<url>https://api.bintray.com/maven/matsim-eth/matsim/ch_pt_utils/;publish=1</url>
+		</repository>
+	</distributionManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.0.2</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
