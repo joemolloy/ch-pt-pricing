@@ -143,4 +143,4 @@ if __name__ == "__main__":
     df_output = df_merge[["hafas_id", "zone_id", "authority_id", "imputed"]].dropna()
     df_output["zone_id"] = df_output["zone_id"].astype(np.int)
     df_output["imputed"] = df_output["imputed"].astype(np.bool)
-    df_output.to_csv("%s/t651.hafas_mapped.csv" % output_path, sep = ";", index = None)
+    df_output.to_csv("%s/t651.csv" % output_path, sep = ";", index = None)

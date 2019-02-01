@@ -9,7 +9,7 @@ output_path=$4
 # First, convert T603
 mkdir ${temp_path}/t603
 sh t603/prepare.sh ${data_path}/t603.pdf ${temp_path}/t603
-python3 t603/clean.py ${temp_path}/t603 ${output_path}/t603.json
+python3 t603/clean.py ${temp_path}/t603 ${output_path}/t603.csv
 rm -r ${temp_path}/t603
 
 # Second, convert bold stations from T603
