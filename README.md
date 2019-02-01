@@ -31,6 +31,8 @@ To run the preparation scripts the following is needed:
 # Java framework
 
 TODO
+- Explain maven packaging
+- Explain input from pipeline (Switzerland network and schedule)
 
 # Web service
 
