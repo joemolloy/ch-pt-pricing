@@ -1,8 +1,6 @@
-.classpath
-.settings
-.project
-dependency-reduced-pom.xml
-target
-.recommenders
+data
+backup
 .metadata
-data/temp
+.recommenders
+output
+__pycache__

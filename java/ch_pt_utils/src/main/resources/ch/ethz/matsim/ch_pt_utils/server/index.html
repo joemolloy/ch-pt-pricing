@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script defer src="https://use.fontawesome.com/releases/v5.6.3/js/all.js" integrity="sha384-EIHISlAOj4zgYieurP0SdoiBYfGJKkgWedPHH4jCzpCXLmzVsw1ouK59MuUtP4a1" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.min.js" integrity="sha256-VBLiveTKyUZMEzJd6z2mhfxIqz3ZATCuVMawPZGzIfA=" crossorigin="anonymous"></script>
+        <meta charset="utf-8">
+
+        <style>
+            body {
+                margin: 0px;
+                padding: 0px;
+                font-family: sans-serif;
+                font-size: 1em;
+            }
+
+            #app {
+                width: 100%;
+                display: block;
+            }
+
+            #map {
+                width: 50%;
+                display: block;
+                height: 600px;
+                float: left;
+            }
+
+            #trips {
+                width: 20%;
+                display: block;
+                float: left;
+            }
+
+            #itinerary {
+                width: 20%;
+                display: block;
+                float: left;
+            }
+
+            #tickets {
+                display: block;
+                width: 50%;
+            }
+
+            #tickets .ticket {
+                margin: 10px;
+                display: inline-block;
+                border: 1px solid black;
+                padding: 10px;
+                height: 80px;
+                float: left;
+            }
+
+            .validity {
+                display: inline-block;
+                border: 1px solid black;
+                border-right-width: 0px;
+            }
+
+            .validity .vi {
+                display: inline-block;
+                height: 10px;
+                width: 10px;
+                float: left;
+                border-right: 1px solid black;
+            }
+
+            .validity .vi.covered {
+                background-color: black;
+            }
+
+            .trip {
+                padding:10px;
+                border-left: 3px solid white;
+            }
+
+            .trip.active {
+                border-left: 3px solid blue;
+            }
+
+            .trip.selected {
+                background-color: rgb(220, 240, 255);
+            }
+
+            .trip input {
+                border-width: 0px;
+                font-size: 1em;
+            }
+
+            .trip.selected input {
+                color: blue;
+                background-color: rgb(220, 240, 255);
+            }
+
+            .trip.selected .origin {
+                color: green;
+            }
+
+            .trip.selected .destination {
+                color: red;
+            }
+
+            .it_stage span.st {
+                display: block;
+                padding: 5px;
+            }
+
+            .it_trip {
+                border-bottom: 1px solid black;
+            }
+
+            #tickets .total {
+                font-size: 1.4em;
+                font-weight: bold;
+            }
+
+            #error {
+                display: block;
+                color: red;
+                clear: both;
+                margin: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="map"></div>
+            <div id="trips">
+                <div v-for="(trip, index) in trips" class="trip" v-on:click="selectTrip(index)" v-bind:class="{ selected: selectedTripIndex == index, active: trip.active }">
+                    <div><span class="origin">Origin</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].originStreetName }}</template><template v-else>{{ trip.originLatLng }}</template></div>
+                    <div><span class="destination">Destination</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].destinationStreetName }}</template><template v-else>{{ trip.destinationLatLng }}</template></div>
+                    <div>
+                        Departure time: <input v-model="trip.plainDepartureTime" v-on:keyup="changeDepartureTime()" />
+                        <div style="color:red;" v-if="parseTime(trip.plainDepartureTime) == -1">Invalid departure time</div>
+                    </div>
+                    <a v-if="selectedTripIndex == index" href="#" v-on:click.stop="removeSelectedTrip()">Remove</a>
+                    <a href="#" v-if="selectedTripIndex == index && !trip.active" v-on:click.stop="activateTrip()">Activate</a>
+                    <a href="#" v-if="selectedTripIndex == index && trip.active" v-on:click.stop="deactivateTrip()">Deactivate</a>
+                </div>
+                <div style="padding: 10px;">
+                    <a href="#" v-on:click.stop="addTrip()">Add trip</a><br /><br />
+                    <a href="#" v-on:click.stop="saveStorage()">Save to storage</a><br />
+                    <a href="#" v-if="storageExists" v-on:click.stop="loadStorage()">Load from storage</a>
+                </div>
+            </div>
+            <div id="itinerary">
+                <div class="it_trip" v-for="trip in planResponse.trips">
+                    <div class="it_stage" v-for="stage in trip.stages">
+                        <span class="st">
+                            <template class="outer" v-if="stage.type == 'pt'">
+                                <template class="inner" v-if="stage.transportMode == 'rail'">
+                                    <i key="train" class="fa fa-train" aria-hidden="true"></i>
+                                </template>
+                                <template class="inner" v-else-if="stage.transportMode == 'tram'">
+                                    <i key="subway" class="fa fa-subway" aria-hidden="true"></i>
+                                </template>
+                                <template class="inner" v-else>
+                                    <i key="bus" class="fa fa-bus" aria-hidden="true"></i>
+                                </template>
+                                {{ stage.originName }}
+                                <i key="arrow" class="fa fa-arrow-right" aria-hidden="true"></i>
+                                {{ stage.destinationName }} <br />
+                                &nbsp; &nbsp;{{ stage.path.length - 1 }} stops, {{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min
+                                @ {{ writeTime(stage.departureTime) }}
+                            </template>
+                            <template class="outer" v-else-if="stage.type == 'walk'">
+                                <i key="walk" class="fa fa-shoe-prints" aria-hidden="true"></i> Walking ({{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min, {{ Math.ceil(stage.distance) }}m)
+                            </template>
+                            <template class="outer" v-else></template>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div id="tickets">
+                <div class="ticket total">Total cost: {{ planResponse.totalPrice }} CHF</div>
+                <div class="ticket" v-for="ticket in planResponse.tickets">
+                    <b>{{ ticket.description }}</b><br />
+                    {{ ticket.price }} CHF<br />
+                    <div class ="validity">
+                        <div class="vi" v-for="item in ticket.coverage" v-bind:class="{ covered: item }"></div>
+                    </div>
+                </div>
+            </div>
+            <div v-if="planResponse.error != undefined && planResponse.error.length > 0" id="error">
+                <pre>{{ planResponse.error }}</pre>
+            </div>
+        </div>
+        <script>
+            var originIcon = new L.Icon({
+              iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+
+            var destinationIcon = new L.Icon({
+              iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+
+            var center = [47.40867909185691, 8.507709008347948];
+
+            function parseTime(time) {
+                var parts = time.split(":");
+
+                try {
+                    if (parts.length >= 2 && parts.length <= 3) {
+                        var hours = Math.round(Number(parts[0]));
+                        var minutes = Math.round(Number(parts[1]));
+                        var seconds = 0;
+
+                        if (parts.length == 3) {
+                            seconds = Math.round(Number(parts[2]));
+                        }
+
+                        if (hours >= 0 && hours < 24) {
+                            if (minutes >= 0 && minutes < 60) {
+                                if (seconds >= 0 && seconds < 60) {
+                                    return hours * 3600 + minutes * 60 + seconds;
+                                }
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                return -1;
+            }
+
+            function writeTime(time) {
+                if (time < 0) {
+                    return "Invalid";
+                }
+
+                time = Math.round(time);
+                var hours = Math.floor(time / 3600);
+                var minutes = Math.floor((time % 3600) / 60);
+                var seconds = time - hours * 3600 - minutes * 60;
+
+                if (hours < 10) {
+                    hours = "0" + hours;
+                }
+
+                if (minutes < 10) {
+                    minutes = "0" + minutes;
+                }
+
+                if (seconds < 10) {
+                    seconds = "0" + seconds;
+                }
+
+                return "" + hours + ":" + minutes + ":" + seconds;
+            }
+
+            var app = new Vue({
+                el: "#app",
+                data: {
+                    trips: [{
+                        originLatLng: { lat: 47.408308, lng: 8.506992},
+                        destinationLatLng: { lat: 47.377036, lng: 8.547220},
+                        plainDepartureTime: "09:00",
+                        departureTime: 9 * 3600,
+                        active: true
+                    }],
+                    selectedTripIndex: -1,
+                    planResponse: { trips: [], tickets: [], error: "abc" },
+                    traces: [],
+                    storageExists: false
+                },
+                methods: {
+                    parseTime: function(x) {
+                        return parseTime("" + x);
+                    },
+                    writeTime: function(x) {
+                        return writeTime(x);
+                    },
+                    selectTrip: function(index) {
+                        this.selectedTripIndex = index;
+
+                        if (index >= 0) {
+                            this.originMarker.setLatLng(this.trips[index].originLatLng);
+                            this.originMarker.addTo(this.map);
+
+                            this.destinationMarker.setLatLng(this.trips[index].destinationLatLng);
+                            this.destinationMarker.addTo(this.map);
+
+                            this.originDestinationLine.addTo(this.map);
+                            this.updateOriginDestinationLine();
+
+                            this.map.fitBounds([
+                                this.trips[index].originLatLng,
+                                this.trips[index].destinationLatLng
+                            ]);
+                        } else {
+                            this.originMarker.removeFrom(this.map);
+                            this.destinationMarker.removeFrom(this.map);
+                            this.originDestinationLine.removeFrom(this.map);
+                        }
+                    },
+                    updateOriginDestinationLine: function() {
+                        this.originDestinationLine.setLatLngs([
+                            this.trips[this.selectedTripIndex].originLatLng,
+                            this.trips[this.selectedTripIndex].destinationLatLng
+                        ]);
+                    },
+                    addTrip: function() {
+                        var lastTrip;
+
+                        if (this.selectedTripIndex >= 0) {
+                            lastTrip = this.trips[this.selectedTripIndex];
+                        } else if (this.trips.length > 0) {
+                            lastTrip = this.trips[this.trips.length - 1];
+                        } else {
+                            lastTrip = {
+                                originLatLng: [47.408308, 8.506992],
+                                destinationLatLng: [47.377036, 8.547220],
+                                departureTime: 9 * 3600,
+                                plainDepartureTime: "09:00",
+                                active: true
+                            };
+                        }
+
+                        var newTrip = {
+                            originLatLng: lastTrip.destinationLatLng,
+                            destinationLatLng: lastTrip.originLatLng,
+                            departureTime: lastTrip.departureTime,
+                            plainDepartureTime: lastTrip.plainDepartureTime,
+                            active: true
+                        };
+
+                        this.trips.push(newTrip);
+                        this.selectTrip(this.trips.length - 1);
+                        this.performRouting();
+                    },
+                    removeSelectedTrip: function() {
+                        var removalIndex = this.selectedTripIndex;
+                        this.selectTrip(-1);
+                        this.trips.splice(removalIndex, 1);
+                    },
+                    activateTrip: function() {
+                        this.trips[this.selectedTripIndex].active = true;
+                        this.performRouting();
+                    },
+                    deactivateTrip: function() {
+                        this.trips[this.selectedTripIndex].active = false;
+                        this.performRouting();
+                    },
+                    moveOriginMarker: function(e) {
+                        this.trips[this.selectedTripIndex].originLatLng = this.originMarker.getLatLng();
+                        this.updateOriginDestinationLine();
+                        this.performRouting();
+                    },
+                    moveDestinationMarker: function(e) {
+                        this.trips[this.selectedTripIndex].destinationLatLng = this.destinationMarker.getLatLng();
+                        this.updateOriginDestinationLine();
+                        this.performRouting();
+                    },
+                    _performRouting: function() {
+                        var request = { trips: [] };
+
+                        for (var i in this.trips) {
+                            var trip = this.trips[i];
+
+                            if (trip.active) {
+                                var tripRequest = {
+                                    originLatitude: trip.originLatLng.lat,
+                                    originLongitude: trip.originLatLng.lng,
+                                    destinationLatitude: trip.destinationLatLng.lat,
+                                    destinationLongitude: trip.destinationLatLng.lng,
+                                    departureTime: trip.departureTime
+                                };
+
+                                request.trips.push(tripRequest);
+                            }
+                        }
+
+                        //var this = this;
+
+                        axios.post("/api", request).then((response) => {
+                            this.planResponse = response.data;
+
+                            for (var tripIndex in this.planResponse.trips) {
+                                var trip = this.planResponse.trips[tripIndex];
+
+                                for (var stageIndex in trip.stages) {
+                                    var stage = trip.stages[stageIndex];
+                                    stage.isBus = stage.transportMode == "bus";
+                                    stage.isTram = stage.transportMode == "tram";
+                                    stage.isRail = stage.transportMode == "rail";
+                                }
+                            }
+
+                            this.updateTraces();
+                        }).catch(function(e) {
+                            console.log(e);
+                        });
+                    },
+                    updateTraces: function() {
+                        for (var i in this.traces) {
+                            this.traces[i].removeFrom(this.map);
+                        }
+
+                        this.traces = [];
+
+                        for (var i in this.planResponse.trips) {
+                            var trip = this.planResponse.trips[i];
+
+                            for (var j in trip.stages) {
+                                var stage = trip.stages[j];
+                                var latLngs = [];
+
+                                for (var k in stage.path) {
+                                    var coord = stage.path[k];
+                                    var latLng = [coord["latitude"], coord["longitude"]];
+
+                                    latLngs.push(latLng);
+                                    var tracePoint = L.circle(latLng, {color: "blue"})
+                                    this.traces.push(tracePoint);
+                                }
+
+                                var traceLine = L.polyline(latLngs, {color : "blue"});
+                                this.traces.push(traceLine);
+                            }
+                        }
+
+                        for (var i in this.traces) {
+                            this.traces[i].addTo(this.map);
+                        }
+                    },
+                    loadStorage: function() {
+                        this.trips = JSON.parse(localStorage.trips);
+                        this.performRouting();
+                    },
+                    saveStorage: function() {
+                        localStorage.trips = JSON.stringify(this.trips);
+                        this.storageExists = true;
+                    },
+                    changeDepartureTime: function() {
+                        var parsedTime = this.parseTime(this.trips[this.selectedTripIndex].plainDepartureTime);
+
+                        if (parsedTime > -1) {
+                            this.trips[this.selectedTripIndex].departureTime = parsedTime;
+                            this.performRouting();
+                        }
+                    }
+                },
+                mounted: function() {
+                    this.performRouting = _.debounce(this._performRouting, 100);
+                    this.storageExists = localStorage.trips != undefined;
+
+                    this.map = L.map('map').setView(center, 13);
+
+                    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                        maxZoom: 18,
+                        id: 'mapbox.streets',
+                        accessToken: 'pk.eyJ1Ijoic2ViaG9lcmwiLCJhIjoiY2pyY2t5ZHk3MDg4NjN5cnNjMnA0bW54eCJ9.L1w87MKAn3Q_HfgOHBIFdg'
+                    }).addTo(this.map);
+
+                    var trip = this.trips[0];
+
+                    this.originMarker = L.marker(center, {"draggable" : true, icon : originIcon});
+                    this.destinationMarker = L.marker(center, {"draggable" : true, icon : destinationIcon});
+                    this.originDestinationLine = L.polyline([center, center], {color: "black", dashArray: 4});
+
+                    this.originMarker.on("move", this.moveOriginMarker);
+                    this.destinationMarker.on("move", this.moveDestinationMarker);
+
+                    this.performRouting();
+                }
+            });
+        </script>
+    </body>
+</html>
