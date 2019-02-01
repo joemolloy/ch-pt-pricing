@@ -45,12 +45,13 @@ a number of input arguments:
 5. Path to `t603.csv` (from the preparation output)
 6. Path to `t603_bold.txt` (from the preparation output)
 
-Furthermore, the server requires a working installation of [GLPK for Java][2].
+Furthermore, the server requires a working installation of [GLPK for Java][2]. Note
+that it is usually necessary to build it manually and put it for instance in `~/glpk`.
 
 An example how to run:
 
 ```
-java -Xmx10G -Djava.library.path=/home/sebastian/glpk/lib/jni ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer 7050 switzerland_transit_schedule.xml.gz switzerland_network.xml.gz t651.csv t603.csv t603_bold.txt
+java -Xmx10G -Djava.library.path=~/glpk/lib/jni ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer 7050 switzerland_transit_schedule.xml.gz switzerland_network.xml.gz t651.csv t603.csv t603_bold.txt
 ```
 
 [1]: https://pypi.org/project/stapler/
