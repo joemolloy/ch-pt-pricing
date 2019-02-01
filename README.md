@@ -24,7 +24,7 @@ parameters, which are:
 
 To run the preparation scripts the following is needed:
 - `python3` with `pandas` installed
-- `pdf-stapler` command line utility to process PDF files [1]
+- `pdf-stapler` command line utility to process PDF files[1]
 - `pdftotext` command line utility to process PDF files
 
 # Java framework
