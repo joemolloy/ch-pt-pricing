@@ -30,11 +30,50 @@ To run the preparation scripts the following is needed:
 
 # Java framework
 
-TODO
-- Explain maven packaging
-- Explain input from pipeline (Switzerland network and schedule)
+The java package is located in `java/ch_pt_utils`. A fat-jar with all dependencies
+included can be created using the `standalone` profile in the Maven pom.xml:
 
-# Web service
+```
+mvn -Pstandalone package
+```
+
+The resulting jar will be in `target/ch_pt_utils-{VERSION}.jar`. It can be used
+to start, for instance, the batch router or the web service.
+
+## Batch router
+
+The package includes a batch router which makes it possible to route a list of
+trips in an easy way. What needs to be provided is a csv file with the following
+content:
+
+```
+request_id;origin_x;origin_y;destination_x;destination_y;departure_time
+```
+
+The coordinates should be given in the same projection as the transit schedule
+(EPSG:2056 for Switzerland) and the departure time should be given in seconds
+after midnight. The request id can be an arbitrary string.
+
+The batch router is started as follows:
+
+```
+java -Xmx10G -cp ch_pt_utils-{VERSION}.jar ch.ethz.matsim.ch_pt_utils.routing.run.RunBatchRouting [OPTIONS]
+```
+
+There are four mandatory options:
+- `--network-path [PATH]` to a MATSim network file
+- `--schedule-path [PATH]` to a MATSim schedule file
+- `--requests-path [PATH]` to the CSV file mentioned above
+- `--output-path [PATH]` to the output file path
+
+Optional are the following settings:
+- `--threads [NUMBER]` determines how many routing threads will be used
+- `--batch-size [NUMBER]` determines how many requests are buffered in each routing cycle on a thread, a default value of 100 should be fine in most cases except when there are so many threads that the I/O operations are leading to thread locking each other temporarily
+- `--parameters-path [PATH]` to a `json` file containing a number of parameters that can be set for the routing. Check the class `ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox.Parameters` for more information.
+
+The program will create an output CSV file with information about the routing.
+
+## Web service
 
 All the code for the web service is located in `ch.ethz.matsim.ch_pt_utils.server`.
 The main script is `ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer`. It requires

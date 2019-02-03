@@ -26,6 +26,7 @@ import ch.ethz.matsim.baseline_scenario.transit.routing.DefaultEnrichedTransitRo
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DefaultDepartureFinder;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DepartureFinder;
+import ch.ethz.matsim.ch_pt_utils.cost.SwissTransitCostCalculator;
 import ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.RailTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.SBBTicketGenerator;
@@ -131,7 +132,7 @@ public class RunRoutingServer {
 
 		RailTicketGenerator railTicketGenerator = new SBBTicketGenerator(triangleRegistry, zonalRegistry);
 
-		TransitCostCalculator transitCostCalculator = new TransitCostCalculator(zonalRegistry, zonalTicketGenerator,
+		TransitCostCalculator transitCostCalculator = new SwissTransitCostCalculator(zonalRegistry, zonalTicketGenerator,
 				railTicketGenerator);
 
 		Collection<String> railModes = Collections.singleton("rail");
