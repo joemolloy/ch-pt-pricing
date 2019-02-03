@@ -1,10 +1,12 @@
+# Public Transport Utilities for Switzerland
+
 This repository contains a collection of tools for PT routing and pricing in
 Switzerland. It consists of two major parts: One part that is mainly used for
 preparing raw data (such as the T603 tarif document) and one part that integrates
 this data into MATSim / SwissRailRaptor. Finally, there is a public transit routing
 server that offers an API and a simple web interface.
 
-# Preparation
+## Preparation
 
 All data preparation is found in `/preparation`. In principle, the script
 `/preparation/prepare.sh` should do all the work. It requires four input
@@ -28,7 +30,7 @@ To run the preparation scripts the following is needed:
 - `pdf-stapler` command line utility to process PDF files [(see here)][1]
 - `pdftotext` command line utility to process PDF files
 
-# Java framework
+## Java framework
 
 The java package is located in `java/ch_pt_utils`. A fat-jar with all dependencies
 included can be created using the `standalone` profile in the Maven pom.xml:
@@ -40,7 +42,7 @@ mvn -Pstandalone package
 The resulting jar will be in `target/ch_pt_utils-{VERSION}.jar`. It can be used
 to start, for instance, the batch router or the web service.
 
-## Batch router
+### Batch router
 
 The package includes a batch router which makes it possible to route a list of
 trips in an easy way. What needs to be provided is a csv file with the following
@@ -73,7 +75,7 @@ Optional are the following settings:
 
 The program will create an output CSV file with information about the routing.
 
-## Web service
+### Web service
 
 All the code for the web service is located in `ch.ethz.matsim.ch_pt_utils.server`.
 The main script is `ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer`. It requires
@@ -93,6 +95,13 @@ An example how to run:
 
 ```
 java -Xmx10G -Djava.library.path=~/glpk/lib/jni ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer 7050 switzerland_transit_schedule.xml.gz switzerland_network.xml.gz t651.csv t603.csv t603_bold.txt
+```
+
+Once the web service is running it can be accessed via `http://localhost:7050`. It is also possible
+to contact the API directly, e.g.:
+
+```
+curl -X POST -H "Content-Type:application/json" http://localhost:7050/ -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0}]}'
 ```
 
 [1]: https://pypi.org/project/stapler/
