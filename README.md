@@ -1,5 +1,14 @@
 # Public Transport Utilities for Switzerland
 
+> DISCLAIMER: This documentation is written from the perspective of the Switzerland
+> MATSim scenario. However, all of these tools are useful for other use cases as
+> well, e.g. Sao Paulo or Paris. At the moment, all components are rather generic
+> except for the public transit cost calculation. There neither the data nor code
+> are written in a generic way, which will happen soon. By then this repository will
+> become a _matsim_pt_utils_ or _ivt_pt_utils_ package rather than _ch_pt_utils_.
+> Maybe things will even be structured in a way that there are separate repositories
+> for the use cases and one central one for the generic tools.
+
 This repository contains a collection of tools for PT routing and pricing in
 Switzerland. It consists of two major parts: One part that is mainly used for
 preparing raw data (such as the T603 tarif document) and one part that integrates
@@ -32,7 +41,7 @@ To run the preparation scripts the following is needed:
 
 ## Java framework
 
-The java package is located in `java/ch_pt_utils`. A fat-jar with all dependencies
+The java package is located in `ch_pt_utils`. A fat-jar with all dependencies
 included can be created using the `standalone` profile in the Maven pom.xml:
 
 ```
