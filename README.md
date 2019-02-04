@@ -39,6 +39,8 @@ To run the preparation scripts the following is needed:
 - `pdf-stapler` command line utility to process PDF files [(see here)][1]
 - `pdftotext` command line utility to process PDF files
 
+A full set of input files is currently located at `/nas/ivtmatsim/pt_data`. The HAFAS file can be found at `/nas/ivtmatsim/scenarios/switzerland/data/hafas/`.
+
 ## Java framework
 
 The java package is located in `ch_pt_utils`. A fat-jar with all dependencies
