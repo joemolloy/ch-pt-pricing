@@ -15,6 +15,9 @@ def read_stations(authorities_path):
     import authorities.engadin_mobil
     stations += authorities.engadin_mobil.read("%s/t651.engadin_mobil.txt" % authorities_path)
 
+    import authorities.frimobil
+    stations += authorities.frimobil.read("%s/t651.frimobil.txt" % authorities_path)
+
     import authorities.libero
     stations += authorities.libero.read("%s/t651.libero.txt" % authorities_path)
 

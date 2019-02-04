@@ -4,3 +4,5 @@ backup
 output
 __pycache__
 /data/
+/temp/
+/output/

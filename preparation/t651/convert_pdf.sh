@@ -25,7 +25,7 @@ pdftotext ${output_path}/passepartout.temp.pdf ${output_path}/t651.passepartout.
 
 # TransReno
 pdf-stapler sel ${data_path}/t651.transreno.pdf 38-41 ${output_path}/transreno.temp.pdf
-pdftotext ${output_path}/transreno.temp.pdf ${output_path}/t651.transreno.txt
+pdftotext -layout ${output_path}/transreno.temp.pdf ${output_path}/t651.transreno.txt
 
 # Frimobil
 pdf-stapler sel ${data_path}/t651.frimobil.pdf 36-58 ${output_path}/frimobil.temp.pdf
