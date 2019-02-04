@@ -1,6 +1,6 @@
-data
 backup
 .metadata
 .recommenders
 output
 __pycache__
+/data/
