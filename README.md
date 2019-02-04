@@ -68,7 +68,7 @@ after midnight. The request id can be an arbitrary string.
 The batch router is started as follows:
 
 ```
-java -Xmx10G -cp ch_pt_utils-{VERSION}.jar ch.ethz.matsim.ch_pt_utils.routing.run.RunBatchRouting [OPTIONS]
+java -Xmx10G -cp ch_pt_utils-{VERSION}.jar ch.ethz.matsim.ch_pt_utils.routing.batch.RunBatchRouting [OPTIONS]
 ```
 
 There are four mandatory options:
@@ -80,9 +80,47 @@ There are four mandatory options:
 Optional are the following settings:
 - `--threads [NUMBER]` determines how many routing threads will be used
 - `--batch-size [NUMBER]` determines how many requests are buffered in each routing cycle on a thread, a default value of 100 should be fine in most cases except when there are so many threads that the I/O operations are leading to thread locking each other temporarily
-- `--parameters-path [PATH]` to a `json` file containing a number of parameters that can be set for the routing. Check the class `ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox.Parameters` for more information.
+- `--parameters-path [PATH]` to a `json` file containing a number of parameters that can be set for the routing. Check the class `ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters` for more information.
 
 The program will create an output CSV file with information about the routing.
+
+The configuration parameters can look as follows:
+
+```json
+{
+    "walkSpeed": 1.2,
+    "walkBeelineDistanceFactor": 1.3,
+    "walkBeelineConnectionDistance": 100.0,
+    "minimalTransferTime": 0.0,
+    "searchRadius": 1000.0,
+    "extensionRadius": 200.0,
+
+    "beforeDepartureOffset": 1800.0,
+    "afterDepartureOffset": 1800.0,
+
+    "scheduleWrappingEndTime": 108000.0,
+
+    "utilities": {
+        "waitingTime": -3.0,
+        "numberOfTransfers": -0.2,
+
+        "accessWalkTime": -5.0,
+        "egressWalkTime": -5.0,
+        "transferWalkTime": -5.0,
+        "directWalkTime": -5.0,
+
+        "railInVehicleTime": -0.1,
+        "subwayInVehicleTime": -0.1,
+        "inVehicleTime": -0.1
+    }
+}
+```
+
+In case no specific utilities for `access`, `egress`, etc. are given, the value from
+`walkTime` is read, which is enforced to be present in that case. The same is true for
+the vehicular modes: If there is no a specific one available (e.g. `railInVehicleTime`),
+the value is fetched from `inVehicleTime`. If it is not present, an exception is
+thrown. The utilities for waiting time and transfers must be present.
 
 ### Web service
 

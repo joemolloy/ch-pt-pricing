@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public class RoutingParameters {
 	// Walking for Raptor
-	public double walkSpeed = 1.3;
+	public double walkSpeed = 1.2;
 	public double walkBeelineDistanceFactor = 1.3;
 
 	public double walkBeelineConnectionDistance = 100.0;
