@@ -119,7 +119,7 @@ public class RoutingToolbox {
 		raptorParameters.setSearchRadius(parameters.searchRadius);
 
 		raptorParameters.setTransferPenaltyTravelTimeToCostFactor(0.0);
-		raptorParameters.setTransferPenaltyFixCostPerTransfer(parameters.utilities.get("numberOfTransfers"));
+		raptorParameters.setTransferPenaltyFixCostPerTransfer(-parameters.utilities.get("numberOfTransfers"));
 		raptorParameters.setMarginalUtilityOfWaitingPt_utl_s(parameters.utilities.get("waitingTime"));
 
 		for (String mode : vehicleModes) {
