@@ -36,6 +36,9 @@ def read_stations(authorities_path):
     import authorities.unireso
     stations += authorities.unireso.read("%s/t651.unireso.txt" % authorities_path)
 
+    import authorities.zvv
+    stations += authorities.zvv.read("%s/t651.zvv.txt" % authorities_path)
+
     df_stations = []
 
     for station_name, station_zones, station_authority in stations:

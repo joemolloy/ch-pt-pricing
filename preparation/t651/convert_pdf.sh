@@ -38,3 +38,7 @@ pdftotext -layout ${output_path}/tvzg.temp.pdf ${output_path}/t651.tvzg.txt
 # Unireso
 pdf-stapler sel ${data_path}/t651.unireso.pdf 69-95 ${output_path}/unireso.temp.pdf
 pdftotext -layout ${output_path}/unireso.temp.pdf ${output_path}/t651.unireso.txt
+
+# ZVV§
+pdf-stapler sel ${data_path}/t651.zvv.pdf 2-101 ${output_path}/zvv.temp.pdf
+pdftotext -layout ${output_path}/zvv.temp.pdf ${output_path}/t651.zvv.txt
