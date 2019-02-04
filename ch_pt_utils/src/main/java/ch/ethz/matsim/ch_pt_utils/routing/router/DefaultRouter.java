@@ -1,5 +1,6 @@
 package ch.ethz.matsim.ch_pt_utils.routing.router;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.matsim.api.core.v01.TransportMode;
@@ -13,8 +14,6 @@ import org.matsim.facilities.Facility;
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRoute;
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
-import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
-import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
 import ch.ethz.matsim.ch_pt_utils.routing.RoutingRequest;
 import ch.ethz.matsim.ch_pt_utils.routing.RoutingResult;
 
@@ -22,14 +21,17 @@ public class DefaultRouter implements Router {
 	private final Network network;
 	private final EnrichedTransitRouter router;
 	private final FrequencyCalculator frequencyCalculator;
-	private final TransitStageTransformer transformer;
+	private final Collection<String> vehicleModes;
+	// private final TransitStageTransformer transformer;
 
 	public DefaultRouter(Network network, EnrichedTransitRouter router, FrequencyCalculator frequencyCalculator,
-			TransitStageTransformer transformer) {
+			Collection<String> vehicleModes) {
+		// TransitStageTransformer transformer) {
 		this.network = network;
 		this.router = router;
 		this.frequencyCalculator = frequencyCalculator;
-		this.transformer = transformer;
+		this.vehicleModes = vehicleModes;
+		// this.transformer = transformer;
 	}
 
 	@Override
@@ -64,8 +66,7 @@ public class DefaultRouter implements Router {
 		boolean isOnlyWalk = true;
 
 		for (Leg leg : legs) {
-			switch (leg.getMode()) {
-			case TransportMode.pt:
+			if (vehicleModes.contains(leg.getMode())) {
 				EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
 
 				inVehicleTime += route.getInVehicleTime();
@@ -80,18 +81,14 @@ public class DefaultRouter implements Router {
 
 				numberOfTransfers++;
 				isOnlyWalk = false;
-
-				break;
-			case TransportMode.access_walk:
-			case TransportMode.egress_walk:
+			} else if (leg.getMode().equals(TransportMode.access_walk)
+					|| leg.getMode().equals(TransportMode.egress_walk)) {
 				accessEgressWalkTime += leg.getTravelTime();
 				accessEgressWalkDistance += leg.getRoute().getDistance();
-				break;
-			case TransportMode.transit_walk:
+			} else if (leg.getMode().equals(TransportMode.transit_walk)) {
 				transferWalkTime += leg.getTravelTime();
 				transferWalkDistance += leg.getRoute().getDistance();
-				break;
-			default:
+			} else {
 				throw new IllegalStateException("Unknown transit mode found: " + leg.getMode());
 			}
 		}
@@ -102,7 +99,7 @@ public class DefaultRouter implements Router {
 		double frequency = frequencyCalculator.calculateFrequency(fromFacility, toFacility, departureTime);
 
 		// III) Calculate price
-		List<TransitStage> transitStages = transformer.getStages(legs);
+		// List<TransitStage> transitStages = transformer.getStages(legs);
 
 		/*
 		 * TicketSolver.Result resultHalfFare =

@@ -100,7 +100,8 @@ public class RunRoutingServer {
 		TransitConnectionFinder connectionFinder = new DefaultTransitConnectionFinder(departureFinder);
 
 		EnrichedTransitRouter enrichedTransitRouter = new DefaultEnrichedTransitRouter(swissRailRaptor,
-				scenario.getTransitSchedule(), connectionFinder, scenario.getNetwork(), walkDistanceFactor, 0.0);
+				scenario.getTransitSchedule(), connectionFinder, scenario.getNetwork(), walkDistanceFactor, 0.0,
+				Collections.singleton("pt"));
 
 		// Set up cost calculation
 
@@ -132,8 +133,8 @@ public class RunRoutingServer {
 
 		RailTicketGenerator railTicketGenerator = new SBBTicketGenerator(triangleRegistry, zonalRegistry);
 
-		TransitCostCalculator transitCostCalculator = new SwissTransitCostCalculator(zonalRegistry, zonalTicketGenerator,
-				railTicketGenerator);
+		TransitCostCalculator transitCostCalculator = new SwissTransitCostCalculator(zonalRegistry,
+				zonalTicketGenerator, railTicketGenerator);
 
 		Collection<String> railModes = Collections.singleton("rail");
 		TransitStageTransformer transformer = new TransitStageTransformer(scenario.getTransitSchedule(), railModes);

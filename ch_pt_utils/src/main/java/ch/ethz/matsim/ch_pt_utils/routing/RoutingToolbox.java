@@ -1,22 +1,12 @@
 package ch.ethz.matsim.ch_pt_utils.routing;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Provider;
-
-import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.TransportMode;
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
-import org.matsim.core.router.RoutingModule;
-import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 
 import ch.ethz.matsim.baseline_scenario.transit.connection.DefaultTransitConnectionFinder;
@@ -26,19 +16,25 @@ import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DefaultDepartureFinder;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DepartureFinder;
 import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
-import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
+import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
+import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
 import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorIntermodalAccessEgress;
-import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorParametersForPerson;
 import ch.sbb.matsim.routing.pt.raptor.LeastCostRaptorRouteSelector;
 import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
+import ch.sbb.matsim.routing.pt.raptor.RaptorParameters;
 import ch.sbb.matsim.routing.pt.raptor.RaptorParametersForPerson;
 import ch.sbb.matsim.routing.pt.raptor.RaptorRouteSelector;
+import ch.sbb.matsim.routing.pt.raptor.RaptorStaticConfig;
+import ch.sbb.matsim.routing.pt.raptor.RaptorStaticConfig.RaptorOptimization;
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptor;
-import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorFactory;
+import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorData;
 
 public class RoutingToolbox {
-	private final Config config;
-	private final Scenario scenario;
+	private final static Logger logger = Logger.getLogger(RoutingToolbox.class);
+
+	private final SwissRailRaptorData raptorData;
+	private final RaptorStaticConfig raptorStaticConfig;
+	private final RaptorParameters raptorParameters;
 
 	private final TransitSchedule schedule;
 	private final Network network;
@@ -46,62 +42,106 @@ public class RoutingToolbox {
 	private Optional<SwissRailRaptor> swissRailRaptor = Optional.empty();
 	private Optional<EnrichedTransitRouter> enrichedTransitRouter = Optional.empty();
 	private Optional<FrequencyCalculator> frequencyCalculator = Optional.empty();
-	private Optional<TransitStageTransformer> transitStageTransformer = Optional.empty();
+	// private Optional<TransitStageTransformer> transitStageTransformer =
+	// Optional.empty();
 
-	private Parameters parameters;
+	private final RoutingParameters parameters;
+	private final Collection<String> vehicleModes;
 
-	static public class Parameters {
-		public double beforeDepartureOffset = 1800.0;
-		public double afterDepartureOffset = 1800.0;
+	private double getWalkTimeUtility(RoutingParameters parameters) {
+		if (!parameters.utilities.containsKey("walkTime")) {
+			throw new IllegalStateException("Utility for walkTime not set.");
+		}
 
-		public double additionalTransferTime = 0.0;
-		public double walkDistanceFactor = 1.3;
-
-		public Collection<String> railModes = Arrays.asList("rail");
-		
-		public double scheduleWrappingEndTime = 30.0 * 3600.0;
+		return parameters.utilities.get("walkTime");
 	}
 
-	public RoutingToolbox(Parameters parameters, Network network, TransitSchedule schedule) {
+	private double getInVehicleTimeUtility(RoutingParameters parameters) {
+		if (!parameters.utilities.containsKey("inVehicleTime")) {
+			throw new IllegalStateException("Utility for inVehicleTime not set.");
+		}
+
+		return parameters.utilities.get("inVehicleTime");
+	}
+
+	public RoutingToolbox(RoutingParameters parameters, Network network, TransitSchedule schedule) {
 		this.network = network;
 		this.schedule = schedule;
 		this.parameters = parameters;
 
-		this.config = ConfigUtils.createConfig();
-		this.scenario = ScenarioUtils.createScenario(config);
+		for (String prefix : Arrays.asList("access", "egress", "transfer", "direct")) {
+			String utilityName = prefix + "WalkTime";
 
-		config.transitRouter().setAdditionalTransferTime(parameters.additionalTransferTime);
-
-		try {
-			Field field = PlansCalcRouteConfigGroup.class.getDeclaredField("acceptModeParamsWithoutClearing");
-			field.setAccessible(true);
-			field.setBoolean(config.plansCalcRoute(), true);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+			if (!parameters.utilities.containsKey(utilityName)) {
+				logger.info("Filling in " + utilityName + " utility by walkTime");
+				parameters.utilities.put(utilityName, getWalkTimeUtility(parameters));
+			}
 		}
 
-		config.plansCalcRoute().getOrCreateModeRoutingParams(TransportMode.walk)
-				.setBeelineDistanceFactor(parameters.walkDistanceFactor);
-		config.plansCalcRoute().getOrCreateModeRoutingParams(TransportMode.transit_walk)
-				.setBeelineDistanceFactor(parameters.walkDistanceFactor);
-		config.plansCalcRoute().getOrCreateModeRoutingParams(TransportMode.access_walk)
-				.setBeelineDistanceFactor(parameters.walkDistanceFactor);
-		config.plansCalcRoute().getOrCreateModeRoutingParams(TransportMode.egress_walk)
-				.setBeelineDistanceFactor(parameters.walkDistanceFactor);
+		vehicleModes = ScheduleUtils.getVehicleModes(schedule);
+
+		for (String prefix : vehicleModes) {
+			String utilityName = prefix + "InVehicleTime";
+
+			if (!parameters.utilities.containsKey(utilityName)) {
+				logger.info("Filling in " + utilityName + " utility by inVehicleTime");
+				parameters.utilities.put(utilityName, getInVehicleTimeUtility(parameters));
+			}
+		}
+
+		if (!parameters.utilities.containsKey("numberOfTransfers")) {
+			throw new IllegalStateException("Utility for numberOfTransfers not set.");
+		}
+
+		if (!parameters.utilities.containsKey("waitingTime")) {
+			throw new IllegalStateException("Utility for waitingTime not set.");
+		}
+
+		raptorStaticConfig = new RaptorStaticConfig();
+		raptorStaticConfig.setBeelineWalkSpeed(parameters.walkSpeed / parameters.walkBeelineDistanceFactor);
+		raptorStaticConfig.setBeelineWalkConnectionDistance(parameters.walkBeelineConnectionDistance);
+
+		raptorStaticConfig.setMarginalUtilityOfTravelTimeAccessWalk_utl_s(parameters.utilities.get("accessWalkTime"));
+		raptorStaticConfig.setMarginalUtilityOfTravelTimeEgressWalk_utl_s(parameters.utilities.get("egressWalkTime"));
+		raptorStaticConfig.setMarginalUtilityOfTravelTimeWalk_utl_s(parameters.utilities.get("transferWalkTime"));
+
+		raptorStaticConfig.setMinimalTransferTime(parameters.minimalTransferTime);
+		raptorStaticConfig.setOptimization(RaptorOptimization.OneToOneRouting);
+		raptorStaticConfig.setUseModeMappingForPassengers(true);
+
+		for (String mode : vehicleModes) {
+			raptorStaticConfig.addModeMappingForPassengers(mode, mode);
+		}
+
+		raptorParameters = new RaptorParameters(new SwissRailRaptorConfigGroup());
+		raptorParameters.setBeelineWalkSpeed(parameters.walkSpeed / parameters.walkBeelineDistanceFactor);
+		raptorParameters.setExtensionRadius(parameters.extensionRadius);
+		raptorParameters.setSearchRadius(parameters.searchRadius);
+
+		raptorParameters.setTransferPenaltyTravelTimeToCostFactor(0.0);
+		raptorParameters.setTransferPenaltyFixCostPerTransfer(parameters.utilities.get("numberOfTransfers"));
+		raptorParameters.setMarginalUtilityOfWaitingPt_utl_s(parameters.utilities.get("waitingTime"));
+
+		for (String mode : vehicleModes) {
+			String utilityName = mode + "InVehicleTime";
+			raptorParameters.setMarginalUtilityOfTravelTime_utl_s(mode, parameters.utilities.get(utilityName));
+		}
+
+		this.raptorData = SwissRailRaptorData.create(schedule, raptorStaticConfig, network);
 	}
 
 	public SwissRailRaptor getSwissRailRaptor() {
 		if (!swissRailRaptor.isPresent()) {
-			RaptorParametersForPerson raptorParametersForPerson = new DefaultRaptorParametersForPerson(config);
+			RaptorParametersForPerson raptorParametersForPerson = (Person person) -> {
+				return raptorParameters;
+			};
+
 			RaptorIntermodalAccessEgress raptorIntermodalAccessEgress = new DefaultRaptorIntermodalAccessEgress();
 			RaptorRouteSelector raptorRouteSelector = new LeastCostRaptorRouteSelector();
-			Map<String, Provider<RoutingModule>> routingModuleProviders = Collections.emptyMap();
 
-			SwissRailRaptorFactory factory = new SwissRailRaptorFactory(schedule, config, network,
-					raptorParametersForPerson, raptorRouteSelector, raptorIntermodalAccessEgress, config.plans(),
-					scenario.getPopulation(), routingModuleProviders);
-
-			swissRailRaptor = Optional.of(factory.get());
+			SwissRailRaptor raptor = new SwissRailRaptor(raptorData, raptorParametersForPerson, raptorRouteSelector,
+					raptorIntermodalAccessEgress);
+			swissRailRaptor = Optional.of(raptor);
 		}
 
 		return swissRailRaptor.get();
@@ -113,7 +153,7 @@ public class RoutingToolbox {
 			TransitConnectionFinder connectionFinder = new DefaultTransitConnectionFinder(departureFinder);
 
 			enrichedTransitRouter = Optional.of(new DefaultEnrichedTransitRouter(getSwissRailRaptor(), schedule,
-					connectionFinder, network, parameters.walkDistanceFactor, parameters.additionalTransferTime));
+					connectionFinder, network, parameters.walkBeelineDistanceFactor, 0.0, vehicleModes));
 		}
 
 		return enrichedTransitRouter.get();
@@ -128,11 +168,11 @@ public class RoutingToolbox {
 		return frequencyCalculator.get();
 	}
 
-	public TransitStageTransformer getTransitStageTransformer() {
-		if (!transitStageTransformer.isPresent()) {
-			transitStageTransformer = Optional.of(new TransitStageTransformer(schedule, parameters.railModes));
-		}
-
-		return transitStageTransformer.get();
-	}
+	/*
+	 * public TransitStageTransformer getTransitStageTransformer() { if
+	 * (!transitStageTransformer.isPresent()) { transitStageTransformer =
+	 * Optional.of(new TransitStageTransformer(schedule, parameters.railModes)); }
+	 * 
+	 * return transitStageTransformer.get(); }
+	 */
 }

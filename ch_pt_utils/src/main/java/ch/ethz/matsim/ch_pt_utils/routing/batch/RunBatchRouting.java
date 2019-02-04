@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ch.ethz.matsim.baseline_scenario.config.CommandLine;
 import ch.ethz.matsim.baseline_scenario.config.CommandLine.ConfigurationException;
 import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox.Parameters;
+import ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters;
 import ch.ethz.matsim.ch_pt_utils.routing.router.DefaultRouterFactory;
 import ch.ethz.matsim.ch_pt_utils.routing.router.RouterFactory;
 
@@ -41,11 +41,11 @@ public class RunBatchRouting {
 		new MatsimNetworkReader(scenario.getNetwork()).readFile(cmd.getOptionStrict("network-path"));
 		new TransitScheduleReader(scenario).readFile(cmd.getOptionStrict("schedule-path"));
 
-		Parameters parameters = new Parameters();
+		RoutingParameters parameters = new RoutingParameters();
 
 		if (cmd.hasOption("parameters-path")) {
 			parameters = new ObjectMapper().readValue(new File(cmd.getOptionStrict("parameters-path")),
-					Parameters.class);
+					RoutingParameters.class);
 		}
 
 		ScheduleUtils.wrapSchedule(scenario.getTransitSchedule(), parameters.scheduleWrappingEndTime);
