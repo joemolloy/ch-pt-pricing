@@ -18,21 +18,21 @@ public abstract class ZVVStylePricing {
 		this.singleTicketPriceHalfFare = singleTicketPriceHalfFare;
 		this.dayTicketPriceFullFare = dayTicketPriceFullFare;
 		this.dayTicketPriceHalfFare = dayTicketPriceHalfFare;
-		this.maximumNumberOfZones = singleTicketValidity.length + 1;
+		this.maximumNumberOfZones = singleTicketValidity.length;
 
-		if (singleTicketPriceFullFare.length + 1 != maximumNumberOfZones) {
+		if (singleTicketPriceFullFare.length != maximumNumberOfZones) {
 			throw new IllegalStateException();
 		}
 
-		if (singleTicketPriceHalfFare.length + 1 != maximumNumberOfZones) {
+		if (singleTicketPriceHalfFare.length != maximumNumberOfZones) {
 			throw new IllegalStateException();
 		}
 
-		if (dayTicketPriceFullFare.length + 1 != maximumNumberOfZones) {
+		if (dayTicketPriceFullFare.length != maximumNumberOfZones) {
 			throw new IllegalStateException();
 		}
 
-		if (dayTicketPriceHalfFare.length + 1 != maximumNumberOfZones) {
+		if (dayTicketPriceHalfFare.length != maximumNumberOfZones) {
 			throw new IllegalStateException();
 		}
 	}
