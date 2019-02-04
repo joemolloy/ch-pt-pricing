@@ -17,7 +17,7 @@ public class FrimobilTicketGenerator extends ZVVStyleTicketGenerator {
 	}
 
 	static public FrimobilTicketGenerator create(ZonalRegistry registry) {
-		Authority authority = registry.getAuthority("TVF");
+		Authority authority = registry.getAuthority("Frimobil");
 		List<Zone> doubleZones = Arrays.asList();
 
 		return new FrimobilTicketGenerator(authority, doubleZones, new FrimobilPricing());

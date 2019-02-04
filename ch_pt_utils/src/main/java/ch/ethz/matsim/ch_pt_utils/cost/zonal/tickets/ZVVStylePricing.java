@@ -42,7 +42,7 @@ public abstract class ZVVStylePricing {
 			throw new IllegalStateException();
 		}
 
-		return Math.min(maximumNumberOfZones, numberOfZones);
+		return Math.min(maximumNumberOfZones - 1, numberOfZones);
 	}
 
 	public double getSingleTicketPrice(int numberOfZones, boolean halfFare) {
