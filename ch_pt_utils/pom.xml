@@ -31,13 +31,18 @@
 			<id>bintray-schweizerischebundesbahnen-simba.mvn</id>
 			<url>https://schweizerischebundesbahnen.bintray.com/simba.mvn</url>
 		</repository>
+		<repository>
+			<id>bintray-matsim-eth-matsim</id>
+			<name>bintray</name>
+			<url>https://dl.bintray.com/matsim-eth/matsim</url>
+		</repository>
 	</repositories>
 
 
 	<distributionManagement>
 		<repository>
 			<id>matsim-eth</id>
-			<url>https://api.bintray.com/maven/matsim-eth/matsim/ch_pt_uils/;publish=1</url>
+			<url>https://api.bintray.com/maven/matsim-eth/matsim/ch_pt_utils/;publish=1</url>
 		</repository>
 	</distributionManagement>
 
