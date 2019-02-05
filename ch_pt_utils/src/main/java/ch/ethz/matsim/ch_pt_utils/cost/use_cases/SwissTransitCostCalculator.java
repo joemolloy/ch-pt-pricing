@@ -1,10 +1,11 @@
-package ch.ethz.matsim.ch_pt_utils.cost;
+package ch.ethz.matsim.ch_pt_utils.cost.use_cases;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.RailTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.TicketSolver;
@@ -27,8 +28,12 @@ public class SwissTransitCostCalculator implements TransitCostCalculator {
 		this.railTicketGenerator = railTicketGenerator;
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator#computeCost(java.util.List, boolean)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator#computeCost(java.util.
+	 * List, boolean)
 	 */
 	@Override
 	public TicketSolver.Result computeCost(List<TransitStage> stages, boolean halfFare) {
@@ -83,6 +88,8 @@ public class SwissTransitCostCalculator implements TransitCostCalculator {
 	}
 
 	private double calculateFallbackCost(double distance) {
-		return distance * 1e-3 * 0.25;
+		double costPerKm = 0.25;
+		double minimumCost = 2.0;
+		return Math.max(minimumCost, Math.ceil(distance * 1e-3 * costPerKm * 100.0 / 25.0) * 25.0 / 100.0);
 	}
 }

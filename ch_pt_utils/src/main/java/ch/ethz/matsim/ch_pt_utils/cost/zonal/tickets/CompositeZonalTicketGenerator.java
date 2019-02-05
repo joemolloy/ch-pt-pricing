@@ -1,10 +1,11 @@
-package ch.ethz.matsim.ch_pt_utils.cost.zonal;
+package ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
+import ch.ethz.matsim.ch_pt_utils.cost.zonal.ZonalTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.ZonalStage;
 
 public class CompositeZonalTicketGenerator implements ZonalTicketGenerator {

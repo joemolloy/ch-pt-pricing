@@ -1,8 +1,8 @@
-package ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.pricing;
+package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.pricing;
 
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.ZVVStylePricing;
+import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.StaticZoneTicketCalculator;
 
-public class PassepartoutPricing extends ZVVStylePricing {
+public class PassepartoutPricing extends StaticZoneTicketCalculator {
 	private final static double[] SINGLE_TICKET_VALIDTY = new double[] { //
 			0.0, //
 			60.0, // 1 Zone

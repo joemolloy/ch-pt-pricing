@@ -26,7 +26,6 @@ import ch.ethz.matsim.baseline_scenario.transit.routing.DefaultEnrichedTransitRo
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DefaultDepartureFinder;
 import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DepartureFinder;
-import ch.ethz.matsim.ch_pt_utils.cost.SwissTransitCostCalculator;
 import ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.RailTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.SBBTicketGenerator;
@@ -35,21 +34,13 @@ import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.Triangle;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.TriangleReader;
 import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.TriangleRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.CompositeZonalTicketGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.SwissTransitCostCalculator;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.Switzerland;
+import ch.ethz.matsim.ch_pt_utils.cost.zonal.ZonalTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.Authority;
 import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.ZonalReader;
 import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.Zone;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.AWelleTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.EngadinMobilTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.FrimobilTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.LiberoTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.OstwindTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.PassepartoutTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.TVZGTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.TransRenoTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.UniresoTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.generators.ZVVTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.server.routing.RoutingHandler;
 import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorIntermodalAccessEgress;
 import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorParametersForPerson;
@@ -110,18 +101,7 @@ public class RunRoutingServer {
 		Collection<Zone> zones = zonalReader.readZones(zonesPath, authorities);
 
 		ZonalRegistry zonalRegistry = new ZonalRegistry(authorities, zones);
-
-		CompositeZonalTicketGenerator zonalTicketGenerator = new CompositeZonalTicketGenerator();
-		zonalTicketGenerator.addGenerator(AWelleTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(EngadinMobilTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(FrimobilTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(LiberoTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(OstwindTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(PassepartoutTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(TransRenoTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(TVZGTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(UniresoTicketGenerator.create(zonalRegistry));
-		zonalTicketGenerator.addGenerator(ZVVTicketGenerator.create(zonalRegistry));
+		ZonalTicketGenerator zonalTicketGenerator = Switzerland.createTicketGenerator(zonalRegistry);
 
 		TriangleReader triangleReader = new TriangleReader();
 		Collection<Triangle> triangles = triangleReader.read(trianglesPath);

@@ -1,8 +1,11 @@
-package ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.pricing;
+package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.pricing;
 
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.ZVVStylePricing;
+import java.util.Set;
 
-public class ZVVPricing extends ZVVStylePricing {
+import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.Zone;
+import ch.ethz.matsim.ch_pt_utils.cost.zonal.tickets.StaticZoneTicketCalculator;
+
+public class ZVVPricing extends StaticZoneTicketCalculator {
 	private final static double[] SINGLE_TICKET_VALIDTY = new double[] { //
 			0.0, //
 			60.0, // 1 Zone
@@ -63,8 +66,29 @@ public class ZVVPricing extends ZVVStylePricing {
 			17.20 // 8+ Zones
 	};
 
-	public ZVVPricing() {
+	private final Zone zone110;
+	private final Zone zone120;
+
+	public ZVVPricing(Zone zone110, Zone zone120) {
 		super(SINGLE_TICKET_VALIDTY, SINGLE_TICKET_PRICES, SINGLE_TICKET_PRICES_HALFFARE, DAY_TICKET_PRICES,
 				DAY_TICKET_PRICES_HALFFARE);
+
+		this.zone110 = zone110;
+		this.zone120 = zone120;
+	}
+
+	@Override
+	protected int calculateNumberOfZones(Set<Zone> zones) {
+		int numberOfZones = zones.size();
+
+		if (zones.contains(zone110)) {
+			numberOfZones++;
+		}
+
+		if (zones.contains(zone120)) {
+			numberOfZones++;
+		}
+
+		return numberOfZones;
 	}
 }

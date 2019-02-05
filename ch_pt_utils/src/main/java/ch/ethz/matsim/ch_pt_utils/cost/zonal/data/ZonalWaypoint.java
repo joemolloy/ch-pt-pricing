@@ -16,16 +16,6 @@ public class ZonalWaypoint {
 		return zones;
 	}
 
-	public boolean isCovered(Collection<Zone> availableZones) {
-		for (Zone test : zones) {
-			if (!availableZones.contains(test)) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	@Override
 	public String toString() {
 		return String.format("Waypoint(%s)",
