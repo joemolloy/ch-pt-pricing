@@ -30,6 +30,8 @@ public class DistanceBasedTicketGenerator implements TrajectoryTicketGenerator {
 		for (TransitStage stage : trajectory) {
 			distance += stage.getDistance();
 		}
+		
+		distance = Math.max(distance, 1000.0);
 
 		double price = calculator.calculatePrice(distance, halfFare);
 		Ticket ticket = new Ticket(numberOfStages, price, createName(distance));

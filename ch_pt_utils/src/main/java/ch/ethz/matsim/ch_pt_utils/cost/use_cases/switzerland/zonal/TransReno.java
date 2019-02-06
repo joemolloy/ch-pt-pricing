@@ -1,7 +1,6 @@
 package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal;
 
 import java.util.Collection;
-import java.util.HashSet;
 
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.trajectory.DistanceBasedTicketGenerator;
@@ -27,13 +26,7 @@ public class TransReno {
 
 	static public TicketGenerator createTrajectoryTicketGenerator(ZonalRegistry zonalRegistry) {
 		Authority authority = zonalRegistry.getAuthority("TransReno");
-		Collection<Zone> zones = new HashSet<>();
-
-		for (Zone zone : zonalRegistry.getZones(authority)) {
-			if (zone.getZoneId() != 1) {
-				zones.add(zone);
-			}
-		}
+		Collection<Zone> zones = zonalRegistry.getZones(authority);
 
 		TrajectoryStageFilter filter = new ZoneTrajectoryFilter(zonalRegistry, zones);
 		return new TrajectoryTicketAdapter(filter,
@@ -41,7 +34,7 @@ public class TransReno {
 	}
 
 	static double calculateDistancePrice(double distance, boolean halfFare) {
-		double distanceKm = 1e-3 * distance;
+		double distanceKm = Math.ceil(1e-3 * distance);
 		double factor = halfFare ? 0.5 : 1.0;
 		return factor * SBBTicketGenerator.calculateFullCost(distanceKm);
 	}

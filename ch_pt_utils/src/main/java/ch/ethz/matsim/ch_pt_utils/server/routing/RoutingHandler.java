@@ -112,21 +112,23 @@ public class RoutingHandler implements Handler {
 				transitStages.addAll(transformer.getStages(legs));
 			}
 
-			Collection<Ticket> tickets = ticketGenerator.createTickets(transitStages, false);
-			TicketSolver.Result result = new TicketSolver().solve(transitStages.size(), tickets);
+			if (transitStages.size() > 0) {
+				Collection<Ticket> tickets = ticketGenerator.createTickets(transitStages, false);
+				TicketSolver.Result result = new TicketSolver().solve(transitStages.size(), tickets);
 
-			for (Ticket ticket : result.tickets) {
-				TicketResponse ticketResponse = new TicketResponse();
+				for (Ticket ticket : result.tickets) {
+					TicketResponse ticketResponse = new TicketResponse();
 
-				ticketResponse.description = ticket.getDescription();
-				ticketResponse.price = ticket.getPrice();
-				planResponse.totalPrice += ticketResponse.price;
+					ticketResponse.description = ticket.getDescription();
+					ticketResponse.price = ticket.getPrice();
+					planResponse.totalPrice += ticketResponse.price;
 
-				for (int i = 0; i < transitStages.size(); i++) {
-					ticketResponse.coverage.add(ticket.getCoverage().get(i));
+					for (int i = 0; i < transitStages.size(); i++) {
+						ticketResponse.coverage.add(ticket.getCoverage().get(i));
+					}
+
+					planResponse.tickets.add(ticketResponse);
 				}
-
-				planResponse.tickets.add(ticketResponse);
 			}
 
 			ctx.json(planResponse);
