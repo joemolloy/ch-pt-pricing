@@ -18,9 +18,6 @@ public class RoutingParameters {
 	public double searchRadius = 1000.0;
 	public double extensionRadius = 200.0;
 
-	// Cost calculation
-	// public Collection<String> railModes = Arrays.asList("rail");
-
 	// Frequency
 	public double beforeDepartureOffset = 1800.0;
 	public double afterDepartureOffset = 1800.0;
@@ -32,14 +29,14 @@ public class RoutingParameters {
 	public Map<String, Double> utilities = new HashMap<>();
 
 	public RoutingParameters() {
-		utilities.put("waitingTime", -3.0);
-		utilities.put("numberOfTransfers", -0.2);
+		utilities.put("waitingTime", -0.0484 / 60.0);
+		utilities.put("numberOfTransfers", -0.17);
 
-		utilities.put("accessWalkTime", -5.0);
-		utilities.put("egressWalkTime", -5.0);
-		utilities.put("transferWalkTime", -5.0);
-		utilities.put("directWalkTime", -5.0);
+		utilities.put("accessWalkTime", -0.0804 / 60.0);
+		utilities.put("egressWalkTime", -0.0804 / 60.0);
+		utilities.put("transferWalkTime", -0.0484 / 60.0);
+		utilities.put("directWalkTime", -0.09 / 60.0);
 
-		utilities.put("inVehicleTime", -0.1);
+		utilities.put("inVehicleTime", -0.017 / 60.0);
 	}
 }

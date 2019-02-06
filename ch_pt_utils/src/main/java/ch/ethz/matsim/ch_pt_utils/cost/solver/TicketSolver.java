@@ -33,7 +33,7 @@ public class TicketSolver {
 		}
 	}
 
-	public Result solve(int numberOfStages, List<Ticket> inputTickets) {
+	public Result solve(int numberOfStages, Collection<Ticket> inputTickets) {
 		List<Ticket> tickets = new LinkedList<>(inputTickets);
 
 		// Set up problem

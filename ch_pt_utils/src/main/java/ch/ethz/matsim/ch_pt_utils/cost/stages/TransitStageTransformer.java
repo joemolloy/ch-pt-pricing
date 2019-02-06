@@ -14,14 +14,15 @@ import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRoute;
+import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
 
 public class TransitStageTransformer {
 	private final TransitSchedule schedule;
-	private final Collection<String> railModes;
+	private final Collection<String> transitModes;
 
-	public TransitStageTransformer(TransitSchedule schedule, Collection<String> railModes) {
+	public TransitStageTransformer(TransitSchedule schedule) {
 		this.schedule = schedule;
-		this.railModes = railModes;
+		this.transitModes = ScheduleUtils.getVehicleModes(schedule);
 	}
 
 	public List<TransitStage> getStages(List<? extends PlanElement> elements) {
@@ -31,7 +32,7 @@ public class TransitStageTransformer {
 			if (element instanceof Leg) {
 				Leg leg = (Leg) element;
 
-				if (leg.getMode().equals(TransportMode.pt)) {
+				if (leg.getMode().equals(TransportMode.pt) || transitModes.contains(leg.getMode())) {
 					EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
 
 					int accessStopIndex = route.getAccessStopIndex();
@@ -58,7 +59,7 @@ public class TransitStageTransformer {
 					}
 
 					TransitStage stage = new TransitStage(hafasIds, route.getDistance(), accessDepartureTime,
-							egressArrivalTime, railModes.contains(transitRoute.getTransportMode()));
+							egressArrivalTime, transitRoute.getTransportMode());
 					stages.add(stage);
 				}
 			}

@@ -7,15 +7,14 @@ public class TransitStage {
 	private final double departureTime;
 	private final double arrivalTime;
 	private final double distance;
-	private final boolean isRail;
+	private final String mode;
 
-	public TransitStage(List<Long> hafasIds, double distance, double departureTime, double arrivalTime,
-			boolean isRail) {
+	public TransitStage(List<Long> hafasIds, double distance, double departureTime, double arrivalTime, String mode) {
 		this.hafasIds = hafasIds;
 		this.departureTime = departureTime;
 		this.arrivalTime = arrivalTime;
 		this.distance = distance;
-		this.isRail = isRail;
+		this.mode = mode;
 	}
 
 	public List<Long> getHafasIds() {
@@ -34,7 +33,7 @@ public class TransitStage {
 		return distance;
 	}
 
-	public boolean isRail() {
-		return isRail;
+	public String getMode() {
+		return mode;
 	}
 }

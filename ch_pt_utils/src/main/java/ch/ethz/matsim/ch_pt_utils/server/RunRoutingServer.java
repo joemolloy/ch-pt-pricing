@@ -3,53 +3,33 @@ package ch.ethz.matsim.ch_pt_utils.server;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-
-import javax.inject.Provider;
 
 import org.geotools.referencing.CRS;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
-import org.matsim.core.router.RoutingModule;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.pt.transitSchedule.api.TransitScheduleReader;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.operation.NoninvertibleTransformException;
 
-import ch.ethz.matsim.baseline_scenario.transit.connection.DefaultTransitConnectionFinder;
-import ch.ethz.matsim.baseline_scenario.transit.connection.TransitConnectionFinder;
-import ch.ethz.matsim.baseline_scenario.transit.routing.DefaultEnrichedTransitRouter;
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
-import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DefaultDepartureFinder;
-import ch.ethz.matsim.baseline_scenario.zurich.cutter.utils.DepartureFinder;
-import ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.RailTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.SBBTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.InterchangeReader;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.Triangle;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.TriangleReader;
-import ch.ethz.matsim.ch_pt_utils.cost.sbb.data.TriangleRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.SwissTransitCostCalculator;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.Switzerland;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.ZonalTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.Authority;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.ZonalReader;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.ZonalRegistry;
-import ch.ethz.matsim.ch_pt_utils.cost.zonal.data.Zone;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Authority;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalReader;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Zone;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.Switzerland;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.InterchangeReader;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.Triangle;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleReader;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
+import ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters;
+import ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox;
 import ch.ethz.matsim.ch_pt_utils.server.routing.RoutingHandler;
-import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorIntermodalAccessEgress;
-import ch.sbb.matsim.routing.pt.raptor.DefaultRaptorParametersForPerson;
-import ch.sbb.matsim.routing.pt.raptor.LeastCostRaptorRouteSelector;
-import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
-import ch.sbb.matsim.routing.pt.raptor.RaptorParametersForPerson;
-import ch.sbb.matsim.routing.pt.raptor.RaptorRouteSelector;
-import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptor;
-import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorFactory;
 import io.javalin.Javalin;
 
 public class RunRoutingServer {
@@ -69,30 +49,9 @@ public class RunRoutingServer {
 		new TransitScheduleReader(scenario).readFile(transitSchedulePath.toString());
 		new MatsimNetworkReader(scenario.getNetwork()).readFile(networkPath.toString());
 
-		double additionalTransferTime = 30.0;
-		config.transitRouter().setAdditionalTransferTime(additionalTransferTime);
-
-		// Set up RAPTOR
-		double walkDistanceFactor = config.plansCalcRoute().getOrCreateModeRoutingParams("walk")
-				.getBeelineDistanceFactor();
-
-		RaptorParametersForPerson raptorParametersForPerson = new DefaultRaptorParametersForPerson(config);
-		RaptorIntermodalAccessEgress raptorIntermodalAccessEgress = new DefaultRaptorIntermodalAccessEgress();
-		RaptorRouteSelector raptorRouteSelector = new LeastCostRaptorRouteSelector();
-		Map<String, Provider<RoutingModule>> routingModuleProviders = Collections.emptyMap();
-
-		SwissRailRaptorFactory factory = new SwissRailRaptorFactory(scenario.getTransitSchedule(), config,
-				scenario.getNetwork(), raptorParametersForPerson, raptorRouteSelector, raptorIntermodalAccessEgress,
-				config.plans(), scenario.getPopulation(), routingModuleProviders);
-
-		SwissRailRaptor swissRailRaptor = factory.get();
-
-		DepartureFinder departureFinder = new DefaultDepartureFinder();
-		TransitConnectionFinder connectionFinder = new DefaultTransitConnectionFinder(departureFinder);
-
-		EnrichedTransitRouter enrichedTransitRouter = new DefaultEnrichedTransitRouter(swissRailRaptor,
-				scenario.getTransitSchedule(), connectionFinder, scenario.getNetwork(), walkDistanceFactor, 0.0,
-				Collections.singleton("pt"));
+		RoutingParameters parameters = new RoutingParameters();
+		RoutingToolbox toolbox = new RoutingToolbox(parameters, scenario.getNetwork(), scenario.getTransitSchedule());
+		EnrichedTransitRouter enrichedTransitRouter = toolbox.getEnrichedTransitRouter();
 
 		// Set up cost calculation
 
@@ -101,7 +60,6 @@ public class RunRoutingServer {
 		Collection<Zone> zones = zonalReader.readZones(zonesPath, authorities);
 
 		ZonalRegistry zonalRegistry = new ZonalRegistry(authorities, zones);
-		ZonalTicketGenerator zonalTicketGenerator = Switzerland.createTicketGenerator(zonalRegistry);
 
 		TriangleReader triangleReader = new TriangleReader();
 		Collection<Triangle> triangles = triangleReader.read(trianglesPath);
@@ -111,18 +69,13 @@ public class RunRoutingServer {
 
 		TriangleRegistry triangleRegistry = new TriangleRegistry(triangles, interchangeIds);
 
-		RailTicketGenerator railTicketGenerator = new SBBTicketGenerator(triangleRegistry, zonalRegistry);
-
-		TransitCostCalculator transitCostCalculator = new SwissTransitCostCalculator(zonalRegistry,
-				zonalTicketGenerator, railTicketGenerator);
-
-		Collection<String> railModes = Collections.singleton("rail");
-		TransitStageTransformer transformer = new TransitStageTransformer(scenario.getTransitSchedule(), railModes);
+		TicketGenerator ticketGenerator = Switzerland.createTicketGenerator(zonalRegistry, triangleRegistry);
+		TransitStageTransformer transformer = new TransitStageTransformer(scenario.getTransitSchedule());
 
 		Javalin app = Javalin.create();
 		app.enableCorsForAllOrigins();
 		app.post("/api", new RoutingHandler(enrichedTransitRouter, scenario.getNetwork(), scenario.getTransitSchedule(),
-				transitCostCalculator, transformer, CRS.decode("EPSG:2056")));
+				ticketGenerator, transformer, CRS.decode("EPSG:2056")));
 		app.get("/", new FrontendHandler());
 		app.start(port);
 	}

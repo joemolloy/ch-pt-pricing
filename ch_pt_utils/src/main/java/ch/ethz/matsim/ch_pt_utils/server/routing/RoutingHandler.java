@@ -2,12 +2,14 @@ package ch.ethz.matsim.ch_pt_utils.server.routing;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.CRS;
 import org.matsim.api.core.v01.Coord;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Leg;
@@ -29,11 +31,12 @@ import org.opengis.referencing.operation.TransformException;
 
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRoute;
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
-import ch.ethz.matsim.ch_pt_utils.cost.TransitCostCalculator;
+import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.TicketSolver;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.server.routing.request.PlanRequest;
 import ch.ethz.matsim.ch_pt_utils.server.routing.request.TripRequest;
 import ch.ethz.matsim.ch_pt_utils.server.routing.response.CoordinateResponse;
@@ -51,20 +54,21 @@ public class RoutingHandler implements Handler {
 	private final Network network;
 	private final TransitSchedule schedule;
 	private final EnrichedTransitRouter enrichedTransitRouter;
-	private final TransitCostCalculator costCalculator;
+	private final TicketGenerator ticketGenerator;
 	private final TransitStageTransformer transformer;
+	private final Collection<String> transitModes;
 
 	public RoutingHandler(EnrichedTransitRouter enrichedTransitRouter, Network network, TransitSchedule schedule,
-			TransitCostCalculator costCalculator, TransitStageTransformer transformer,
-			CoordinateReferenceSystem scheduleCRS)
+			TicketGenerator ticketGenerator, TransitStageTransformer transformer, CoordinateReferenceSystem scheduleCRS)
 			throws NoSuchAuthorityCodeException, FactoryException, NoninvertibleTransformException {
 		this.transform = CRS.findMathTransform(CRS.decode("EPSG:4326"), scheduleCRS);
 		this.network = network;
 		this.enrichedTransitRouter = enrichedTransitRouter;
 		this.schedule = schedule;
 		this.backTransform = transform.inverse();
-		this.costCalculator = costCalculator;
+		this.ticketGenerator = ticketGenerator;
 		this.transformer = transformer;
+		this.transitModes = ScheduleUtils.getVehicleModes(schedule);
 	}
 
 	@Override
@@ -108,7 +112,8 @@ public class RoutingHandler implements Handler {
 				transitStages.addAll(transformer.getStages(legs));
 			}
 
-			TicketSolver.Result result = costCalculator.computeCost(transitStages, false);
+			Collection<Ticket> tickets = ticketGenerator.createTickets(transitStages, false);
+			TicketSolver.Result result = new TicketSolver().solve(transitStages.size(), tickets);
 
 			for (Ticket ticket : result.tickets) {
 				TicketResponse ticketResponse = new TicketResponse();
@@ -154,7 +159,7 @@ public class RoutingHandler implements Handler {
 		}
 
 		for (Leg leg : legs) {
-			if (leg.getMode().equals("pt")) {
+			if (leg.getMode().equals(TransportMode.pt) || transitModes.contains(leg.getMode())) {
 				TransitStageResponse stageResponse = new TransitStageResponse();
 				EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
 
