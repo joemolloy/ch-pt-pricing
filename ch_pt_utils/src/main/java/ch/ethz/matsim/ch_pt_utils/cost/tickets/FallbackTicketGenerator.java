@@ -48,7 +48,8 @@ public class FallbackTicketGenerator implements TicketGenerator {
 
 			if (coveringTickets == 0) {
 				double cost = calculatePrice(stages.get(i).getDistance(), halfFare);
-				Ticket ticket = new Ticket(stages.size(), cost, "Fallback");
+				cost = Math.floor(cost * 100.0 / 20.0) * 20.0 / 100.0;
+				Ticket ticket = new Ticket(stages.size(), cost, "Unknown Tariff");
 				ticket.getCoverage().set(i);
 				tickets.add(ticket);
 			}
