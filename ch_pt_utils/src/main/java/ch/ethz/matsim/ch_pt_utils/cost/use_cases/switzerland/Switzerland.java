@@ -10,7 +10,7 @@ import ch.ethz.matsim.ch_pt_utils.cost.tickets.trajectory.filter.TrajectoryStage
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.ZonalTicketAdapter;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.tickets.CompositeZonalTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.NewSBBGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.SBBTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.AWelle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.EngadinMobil;
@@ -27,10 +27,10 @@ public class Switzerland {
 	private Switzerland() {
 	}
 
-	static public TicketGenerator createSBBTicketGenerator(ZonalRegistry zonalRegistry,
+	static public TicketGenerator createTrajectoryTicketGenerator(ZonalRegistry zonalRegistry,
 			TriangleRegistry triangleRegistry) {
 		TrajectoryStageFilter filter = new ModeTrajectoryFilter("rail");
-		TrajectoryTicketGenerator generator = new NewSBBGenerator(triangleRegistry, zonalRegistry);
+		TrajectoryTicketGenerator generator = new SBBTicketGenerator(triangleRegistry, zonalRegistry);
 
 		return new TrajectoryTicketAdapter(filter, generator);
 	}
@@ -54,8 +54,9 @@ public class Switzerland {
 	static public TicketGenerator createTicketGenerator(ZonalRegistry zonalRegistry,
 			TriangleRegistry triangleRegistry) {
 		CompositeTicketGenerator ticketGenerator = new CompositeTicketGenerator();
-		ticketGenerator.addGenerator(createSBBTicketGenerator(zonalRegistry, triangleRegistry));
+		ticketGenerator.addGenerator(createTrajectoryTicketGenerator(zonalRegistry, triangleRegistry));
 		ticketGenerator.addGenerator(createZonalTicketGenerator(zonalRegistry));
+		ticketGenerator.addGenerator(TransReno.createTrajectoryTicketGenerator(zonalRegistry));
 
 		FallbackTicketGenerator fallbackTicketGenerator = new FallbackTicketGenerator(ticketGenerator, 2.0, 0.25, 1.0,
 				0.125);

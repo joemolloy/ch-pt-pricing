@@ -9,81 +9,28 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.matsim.core.utils.collections.Tuple;
-
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
-import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.trajectory.TrajectoryTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Authority;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Zone;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.Triangle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
 
-public class SBBTicketGenerator implements TicketGenerator {
+public class SBBTicketGenerator implements TrajectoryTicketGenerator {
 	private final TriangleRegistry triangleRegistry;
 	private final ZonalRegistry zonalRegistry;
-	private final double[] costTable;
+	private final static double[] costTable = createCostTable();
 
 	public SBBTicketGenerator(TriangleRegistry triangleRegistry, ZonalRegistry zonalRegistry) {
 		this.zonalRegistry = zonalRegistry;
 		this.triangleRegistry = triangleRegistry;
-		costTable = createCostTable();
 	}
 
-	private double calculateCost(double distance) {
+	public static double calculateFullCost(double distance) {
 		int intDistance = (int) distance;
 		return costTable[intDistance];
-	}
-
-	private List<Tuple<Integer, Integer>> getMaximumLengthRailTripIndices(List<TransitStage> stages) {
-		List<Tuple<Integer, Integer>> indices = new LinkedList<>();
-
-		int startIndex = -1;
-
-		for (int stageIndex = 0; stageIndex < stages.size(); stageIndex++) {
-			TransitStage stage = stages.get(stageIndex);
-
-			if (stage.getMode().equals("rail")) {
-				if (startIndex == -1) {
-					startIndex = stageIndex;
-				}
-			} else {
-				if (startIndex != -1) {
-					indices.add(new Tuple<>(startIndex, stageIndex));
-					startIndex = -1;
-				}
-			}
-		}
-
-		if (startIndex != -1) {
-			indices.add(new Tuple<>(startIndex, stages.size()));
-		}
-
-		return indices;
-	}
-
-	private List<Tuple<Integer, Integer>> getRailTripIndices(List<TransitStage> stages) {
-		List<Tuple<Integer, Integer>> maximumLengthIndices = getMaximumLengthRailTripIndices(stages);
-		List<Tuple<Integer, Integer>> indices = new LinkedList<>();
-
-		for (Tuple<Integer, Integer> index : maximumLengthIndices) {
-			int startIndex = index.getFirst();
-			int endIndex = index.getSecond();
-
-			int maximumLength = endIndex - startIndex;
-
-			for (int stride = 1; stride <= maximumLength; stride++) {
-				for (int offset = 0; offset <= maximumLength - stride; offset++) {
-					int itemStartIndex = startIndex + offset;
-					int itemEndIndex = itemStartIndex + stride;
-
-					indices.add(new Tuple<>(itemStartIndex, itemEndIndex));
-				}
-			}
-		}
-
-		return indices;
 	}
 
 	private Optional<Double> computeStageDistance(TransitStage stage) {
@@ -141,91 +88,83 @@ public class SBBTicketGenerator implements TicketGenerator {
 	}
 
 	@Override
-	public Collection<Ticket> createTickets(List<TransitStage> stages, boolean halfFare) {
+	public Collection<Ticket> createTickets(List<TransitStage> trajectory, int startIndex, int numberOfStages,
+			boolean halfFare) {
 		List<Ticket> tickets = new LinkedList<>();
-		List<Tuple<Integer, Integer>> railTripIndices = getRailTripIndices(stages);
 
-		for (Tuple<Integer, Integer> tripIndex : railTripIndices) {
-			int startIndex = tripIndex.getFirst();
-			int endIndex = tripIndex.getSecond();
+		double distance = 0.0;
+		boolean validDistanceFound = true;
+		List<Set<Authority>> authorities = new ArrayList<>(2 * trajectory.size());
 
-			double distance = 0.0;
-			boolean validDistanceFound = true;
-			List<Set<Authority>> authorities = new ArrayList<>(2 * (endIndex - startIndex));
+		for (TransitStage stage : trajectory) {
+			long originHafasId = stage.getHafasIds().get(0);
+			long destinationHafasId = stage.getHafasIds().get(stage.getHafasIds().size() - 1);
 
-			for (int stageIndex = startIndex; stageIndex < endIndex; stageIndex++) {
-				TransitStage stage = stages.get(stageIndex);
+			Optional<Double> stageDistance = computeStageDistance(stage);
 
-				long originHafasId = stage.getHafasIds().get(0);
-				long destinationHafasId = stage.getHafasIds().get(stage.getHafasIds().size() - 1);
-
-				Optional<Double> stageDistance = computeStageDistance(stage);
-
-				if (stageDistance.isPresent()) {
-					distance += stageDistance.get();
-				} else {
-					validDistanceFound = false;
-					continue;
-				}
-
-				authorities.add(zonalRegistry.getZones(originHafasId).stream().map(Zone::getAuthority)
-						.collect(Collectors.toSet()));
-				authorities.add(zonalRegistry.getZones(destinationHafasId).stream().map(Zone::getAuthority)
-						.collect(Collectors.toSet()));
+			if (stageDistance.isPresent()) {
+				distance += stageDistance.get();
+			} else {
+				validDistanceFound = false;
+				continue;
 			}
 
-			if (validDistanceFound) {
-				Set<Authority> uniqueAuthorities = new HashSet<>();
-				authorities.forEach(uniqueAuthorities::addAll);
-				boolean coveredByAuthority = false;
+			authorities.add(
+					zonalRegistry.getZones(originHafasId).stream().map(Zone::getAuthority).collect(Collectors.toSet()));
+			authorities.add(zonalRegistry.getZones(destinationHafasId).stream().map(Zone::getAuthority)
+					.collect(Collectors.toSet()));
+		}
 
-				for (Authority authority : uniqueAuthorities) {
-					if (authorities.stream().filter(l -> !l.contains(authority)).count() == 0) {
-						coveredByAuthority = true;
-						break;
+		if (validDistanceFound) {
+			Set<Authority> uniqueAuthorities = new HashSet<>();
+			authorities.forEach(uniqueAuthorities::addAll);
+			boolean coveredByAuthority = false;
+
+			for (Authority authority : uniqueAuthorities) {
+				if (authorities.stream().filter(l -> !l.contains(authority)).count() == 0) {
+					coveredByAuthority = true;
+					break;
+				}
+			}
+
+			if (!coveredByAuthority) {
+				double cost = calculateFullCost(distance);
+
+				List<Long> stringTicketList = new LinkedList<>();
+
+				for (TransitStage stage : trajectory) {
+
+					long originHafasId = stage.getHafasIds().get(0);
+					long destinationHafasId = stage.getHafasIds().get(stage.getHafasIds().size() - 1);
+
+					if (stringTicketList.size() == 0) {
+						stringTicketList.add(originHafasId);
+					} else if (!stringTicketList.get(stringTicketList.size() - 1).equals(originHafasId)) {
+						stringTicketList.add(originHafasId);
+					}
+
+					if (!stringTicketList.get(stringTicketList.size() - 1).equals(destinationHafasId)) {
+						stringTicketList.add(destinationHafasId);
 					}
 				}
 
-				if (!coveredByAuthority) {
-					double cost = calculateCost(distance);
+				String stringTicket = "SBB " + String.join(", ",
+						stringTicketList.stream().map(String::valueOf).collect(Collectors.toList()));
 
-					List<Long> stringTicketList = new LinkedList<>();
+				Ticket ticket = new Ticket(numberOfStages, cost, stringTicket);
 
-					for (int stageIndex = startIndex; stageIndex < endIndex; stageIndex++) {
-						TransitStage stage = stages.get(stageIndex);
-
-						long originHafasId = stage.getHafasIds().get(0);
-						long destinationHafasId = stage.getHafasIds().get(stage.getHafasIds().size() - 1);
-
-						if (stringTicketList.size() == 0) {
-							stringTicketList.add(originHafasId);
-						} else if (!stringTicketList.get(stringTicketList.size() - 1).equals(originHafasId)) {
-							stringTicketList.add(originHafasId);
-						}
-
-						if (!stringTicketList.get(stringTicketList.size() - 1).equals(destinationHafasId)) {
-							stringTicketList.add(destinationHafasId);
-						}
-					}
-
-					String stringTicket = "SBB " + String.join(", ",
-							stringTicketList.stream().map(String::valueOf).collect(Collectors.toList()));
-
-					Ticket ticket = new Ticket(stages.size(), cost, stringTicket);
-
-					for (int stageIndex = startIndex; stageIndex < endIndex; stageIndex++) {
-						ticket.getCoverage().set(stageIndex);
-					}
-
-					tickets.add(ticket);
+				for (int offset = 0; offset < trajectory.size(); offset++) {
+					ticket.getCoverage().set(startIndex + offset);
 				}
+
+				tickets.add(ticket);
 			}
 		}
 
 		return tickets;
 	}
 
-	private double[] createCostTable() {
+	private static double[] createCostTable() {
 		double[] costTable = new double[1500];
 
 		for (int distanceIndex = 0; distanceIndex < 1500; distanceIndex++) {
