@@ -31,6 +31,9 @@ pdftotext -layout ${output_path}/transreno.temp.pdf ${output_path}/t651.transren
 pdf-stapler sel ${data_path}/t651.frimobil.pdf 36-58 ${output_path}/frimobil.temp.pdf
 pdftotext -layout ${output_path}/frimobil.temp.pdf ${output_path}/t651.frimobil.txt
 
+# TVSZ
+cp ${data_path}/t651.tvsz.docx ${output_path}/t651.tvsz.docx
+
 # TVZG
 pdf-stapler sel ${data_path}/t651.tvzg.pdf 70-82 ${output_path}/tvzg.temp.pdf
 pdftotext -layout ${output_path}/tvzg.temp.pdf ${output_path}/t651.tvzg.txt

@@ -30,6 +30,9 @@ def read_stations(authorities_path):
     import authorities.transreno
     stations += authorities.transreno.read("%s/t651.transreno.txt" % authorities_path)
 
+    import authorities.tvsz
+    stations += authorities.tvsz.read("%s/t651.tvsz.docx" % authorities_path)
+
     import authorities.tvzg
     stations += authorities.tvzg.read("%s/t651.tvzg.txt" % authorities_path)
 

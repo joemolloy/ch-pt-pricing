@@ -38,6 +38,7 @@ To run the preparation scripts the following is needed:
 - `python3` with `pandas` installed
 - `pdf-stapler` command line utility to process PDF files [(see here)][1]
 - `pdftotext` command line utility to process PDF files
+- `python-docx` package via `pip` (to read e.g. TVSZ station data)
 
 A full set of input files is currently located at `/nas/ivtmatsim/pt_data`. The HAFAS file can be found at `/nas/ivtmatsim/scenarios/switzerland/data/hafas/`.
 
