@@ -25,7 +25,7 @@ parameters, which are:
 2. Path to the tarif data. It should contain the following files:
    - `t603.pdf`, the T603 SBB tarif information
    - `t603_bold.raw.txt`, a manually created list of station ids that are written in **bold** in T603 (this will probably not be needed anymore in future versions)
-   - `t651.{authority}.pdf`, all T651 tarif documents for the transport authorities in Switzerland. Currently, these are `awelle`, `engadin_mobil`, `frimobil`, `libero`, `ostwind`, `passepartout`, `transreno`, `tvzg`, `unireso`, and `zvv`.
+   - `t651.{authority}.pdf`, all T651 tarif documents for the transport authorities in Switzerland. Currently, these are `awelle`, `engadin_mobil`, `frimobil`, `libero`, `ostwind`, `passepartout`, `transreno`, `tvsz`, `tvzg`, `unireso`, and `zvv`.
 3. Path to a temporary directory. It will be used to perform some temporary file conversion.
 4. Path to the output directory. Several files will be created here:
    - `t603.csv`, all the relevant information from T603 in digital form
