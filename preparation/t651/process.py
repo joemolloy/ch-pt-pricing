@@ -21,6 +21,9 @@ def read_stations(authorities_path):
     import authorities.libero
     stations += authorities.libero.read("%s/t651.libero.txt" % authorities_path)
 
+    import authorities.mobilis
+    stations += authorities.mobilis.read("%s/t651.mobilis.xls" % authorities_path)
+
     import authorities.ostwind
     stations += authorities.ostwind.read("%s/t651.ostwind.txt" % authorities_path)
 

@@ -1,5 +1,7 @@
 # Public Transport Utilities for Switzerland
 
+![Zone assignment](docs/zone_assignment.png)
+
 > DISCLAIMER: This documentation is written from the perspective of the Switzerland
 > MATSim scenario. However, all of these tools are useful for other use cases as
 > well, e.g. Sao Paulo or Paris. At the moment, all components are rather generic

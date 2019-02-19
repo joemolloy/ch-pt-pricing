@@ -15,6 +15,13 @@ pdftotext -layout ${output_path}/engadin_mobil.temp.pdf ${output_path}/t651.enga
 pdf-stapler sel ${data_path}/t651.libero.pdf 47-67 ${output_path}/libero.temp.pdf
 pdftotext ${output_path}/libero.temp.pdf ${output_path}/t651.libero.txt
 
+# Mobilis
+cp ${data_path}/t651.mobilis.xls ${output_path}/t651.mobilis.xls
+
+# Onde Verte
+pdf-stapler sel ${data_path}/t651.ondeverte.pdf 41-66 ${output_path}/ondeverte.temp.pdf
+pdftotext -layout ${output_path}/ondeverte.temp.pdf ${output_path}/t651.ondeverte.txt
+
 # Ostwind
 pdf-stapler sel ${data_path}/t651.ostwind.pdf 56-136 ${output_path}/ostwind.temp.pdf
 pdftotext -layout ${output_path}/ostwind.temp.pdf ${output_path}/t651.ostwind.txt
