@@ -3,7 +3,7 @@ import re
 def read(path):
     stations = []
 
-    with open(path) as f:
+    with open(path, encoding="utf8") as f:
         expect_empty = False
         reading_stations = False
 
