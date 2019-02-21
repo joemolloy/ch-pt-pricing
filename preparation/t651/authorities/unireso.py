@@ -3,7 +3,7 @@ import re
 def read(path):
     stations = []
 
-    with open(path, encoding="utf8") as f:
+    with open(path, encoding="utf-8") as f:
         reading = False
 
         for line in f:

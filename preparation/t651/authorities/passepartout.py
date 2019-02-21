@@ -4,7 +4,7 @@ def read(path):
     zones = []
     names = []
 
-    with open(path, encoding="utf8") as f:
+    with open(path, 'r', encoding='utf8') as f:
         reading = False
 
         content = ""
