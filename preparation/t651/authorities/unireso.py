@@ -9,7 +9,7 @@ def read(path):
         for line in f:
             line = line.strip()
 
-            match = re.match(r'^([\w+ ,/]+)\s+([0-9]{2})$', line)
+            match = re.match(r'^([\w+ ,/.-]+)\s+([0-9]{2})$', line)
 
             if match:
                 station_name = match.group(1).strip()
