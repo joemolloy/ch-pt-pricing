@@ -11,8 +11,8 @@ import java.util.function.Consumer;
 import org.apache.log4j.Logger;
 import org.matsim.core.utils.misc.Time;
 
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingResult;
 import ch.ethz.matsim.ch_pt_utils.routing.router.Router;
 import ch.ethz.matsim.ch_pt_utils.routing.router.RouterFactory;
 
@@ -29,17 +29,17 @@ public class BatchRouter {
 		this.batchSize = batchSize;
 	}
 
-	public void run(Iterator<RoutingRequest> requestIterator, Consumer<RoutingResult> resultConsumer)
+	public void run(Iterator<PlanRoutingRequest> requestIterator, Consumer<PlanRoutingResult> resultConsumer)
 			throws InterruptedException {
 		run(requestIterator, resultConsumer, Optional.empty());
 	}
 
-	public void run(Iterator<RoutingRequest> requestIterator, Consumer<RoutingResult> resultConsumer,
+	public void run(Iterator<PlanRoutingRequest> requestIterator, Consumer<PlanRoutingResult> resultConsumer,
 			int numberOfRequests) throws InterruptedException {
 		run(requestIterator, resultConsumer, Optional.of(numberOfRequests));
 	}
 
-	private void run(Iterator<RoutingRequest> requestIterator, Consumer<RoutingResult> resultConsumer,
+	private void run(Iterator<PlanRoutingRequest> requestIterator, Consumer<PlanRoutingResult> resultConsumer,
 			Optional<Integer> numberOfRequests) throws InterruptedException {
 		List<Thread> threads = new LinkedList<>();
 		AtomicInteger progressCounter = new AtomicInteger(0);
@@ -109,12 +109,12 @@ public class BatchRouter {
 		logger.info(String.format("Routing finished after %s", Time.writeTime(totalTime)));
 	}
 
-	private void runInstance(Iterator<RoutingRequest> requestIterator, Consumer<RoutingResult> resultConsumer,
+	private void runInstance(Iterator<PlanRoutingRequest> requestIterator, Consumer<PlanRoutingResult> resultConsumer,
 			AtomicInteger progressCounter) {
 		Router router = factory.createRouter();
 
 		while (true) {
-			List<RoutingRequest> requests = new LinkedList<>();
+			List<PlanRoutingRequest> requests = new LinkedList<>();
 
 			synchronized (requestIterator) {
 				while (requestIterator.hasNext() && requests.size() < batchSize) {
@@ -126,9 +126,9 @@ public class BatchRouter {
 				return;
 			}
 
-			List<RoutingResult> results = new LinkedList<>();
+			List<PlanRoutingResult> results = new LinkedList<>();
 
-			for (RoutingRequest request : requests) {
+			for (PlanRoutingRequest request : requests) {
 				results.add(router.process(request));
 				progressCounter.incrementAndGet();
 			}

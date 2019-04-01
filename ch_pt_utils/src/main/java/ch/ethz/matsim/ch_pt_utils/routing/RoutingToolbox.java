@@ -42,8 +42,6 @@ public class RoutingToolbox {
 	private Optional<SwissRailRaptor> swissRailRaptor = Optional.empty();
 	private Optional<EnrichedTransitRouter> enrichedTransitRouter = Optional.empty();
 	private Optional<FrequencyCalculator> frequencyCalculator = Optional.empty();
-	// private Optional<TransitStageTransformer> transitStageTransformer =
-	// Optional.empty();
 
 	private final RoutingParameters parameters;
 	private final Collection<String> vehicleModes;
@@ -167,12 +165,4 @@ public class RoutingToolbox {
 
 		return frequencyCalculator.get();
 	}
-
-	/*
-	 * public TransitStageTransformer getTransitStageTransformer() { if
-	 * (!transitStageTransformer.isPresent()) { transitStageTransformer =
-	 * Optional.of(new TransitStageTransformer(schedule, parameters.railModes)); }
-	 * 
-	 * return transitStageTransformer.get(); }
-	 */
 }

@@ -10,9 +10,9 @@ import java.util.List;
 
 import org.matsim.api.core.v01.Coord;
 
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
 
-public class CsvRequestIterator implements Iterator<RoutingRequest> {
+public class CsvRequestIterator implements Iterator<TripRoutingRequest> {
 	private final BufferedReader reader;
 
 	private List<String> header = null;
@@ -58,8 +58,9 @@ public class CsvRequestIterator implements Iterator<RoutingRequest> {
 	}
 
 	@Override
-	public RoutingRequest next() {
-		String requestId = next.get(header.indexOf("request_id"));
+	public TripRoutingRequest next() {
+		String planId = next.get(header.indexOf("plan_id"));
+		String tripId = next.get(header.indexOf("trip_id"));
 		double originX = Double.parseDouble(next.get(header.indexOf("origin_x")));
 		double originY = Double.parseDouble(next.get(header.indexOf("origin_y")));
 		double destinationX = Double.parseDouble(next.get(header.indexOf("destination_x")));
@@ -69,6 +70,6 @@ public class CsvRequestIterator implements Iterator<RoutingRequest> {
 		Coord originCoord = new Coord(originX, originY);
 		Coord destinationCoord = new Coord(destinationX, destinationY);
 
-		return new RoutingRequest(requestId, originCoord, destinationCoord, departureTime);
+		return new TripRoutingRequest(planId, tripId, originCoord, destinationCoord, departureTime);
 	}
 }

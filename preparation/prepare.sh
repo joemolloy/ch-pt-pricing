@@ -19,4 +19,4 @@ python3 t603_bold/convert.py ${data_path}/t603_bold.raw.txt ${output_path}/t603_
 mkdir ${temp_path}/t651
 sh t651/convert_pdf.sh ${data_path} ${temp_path}/t651
 python3 t651/process.py ${hafas_path} ${temp_path}/t651 ${output_path}
-rm -r ${temp_path}/t651
+#rm -r ${temp_path}/t651

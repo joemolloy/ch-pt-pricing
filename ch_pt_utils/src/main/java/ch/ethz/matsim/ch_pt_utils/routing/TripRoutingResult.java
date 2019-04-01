@@ -1,13 +1,13 @@
 package ch.ethz.matsim.ch_pt_utils.routing;
 
-public class RoutingResult {
-	private final String requestId;
+public class TripRoutingResult {
+	private final String tripId;
 
 	private final int numberOfTransfers;
 	private final boolean isOnlyWalk;
 
-	private final double singleFullFare;
-	private final double singleHalfFare;
+	private final boolean isTicketPriceValid;
+	private final double ticketPrice;
 
 	private final double inVehicleTime;
 	private final double inVehicleDistance;
@@ -23,15 +23,15 @@ public class RoutingResult {
 
 	private final double frequency;
 
-	public RoutingResult(String requestId, int numberOfTransfers, boolean isOnlyWalk, double singleFullFare,
-			double singleHalfFare, double inVehicleTime, double inVehicleDistance, double transferWalkTime,
+	public TripRoutingResult(String tripId, int numberOfTransfers, boolean isOnlyWalk, boolean isTicketPriceValid,
+			double ticketPrice, double inVehicleTime, double inVehicleDistance, double transferWalkTime,
 			double transferWalkDistance, double initialWaitingTime, double transferWaitingTime,
 			double accessEgressWalkTime, double accessEgressWalkDistance, double frequency) {
-		this.requestId = requestId;
+		this.tripId = tripId;
 		this.numberOfTransfers = numberOfTransfers;
 		this.isOnlyWalk = isOnlyWalk;
-		this.singleFullFare = singleFullFare;
-		this.singleHalfFare = singleHalfFare;
+		this.isTicketPriceValid = isTicketPriceValid;
+		this.ticketPrice = ticketPrice;
 		this.inVehicleTime = inVehicleTime;
 		this.inVehicleDistance = inVehicleDistance;
 		this.transferWalkTime = transferWalkTime;
@@ -43,8 +43,8 @@ public class RoutingResult {
 		this.frequency = frequency;
 	}
 
-	public String getRequestId() {
-		return requestId;
+	public String getTripId() {
+		return tripId;
 	}
 
 	public int getNumberOfTransfers() {
@@ -55,12 +55,12 @@ public class RoutingResult {
 		return isOnlyWalk;
 	}
 
-	public double getSingleFullFare() {
-		return singleFullFare;
+	public boolean isTicketPriceValid() {
+		return isTicketPriceValid;
 	}
 
-	public double getSingleHalfFare() {
-		return singleHalfFare;
+	public double getTicketPrice() {
+		return ticketPrice;
 	}
 
 	public double getInVehicleTime() {

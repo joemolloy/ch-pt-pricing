@@ -8,6 +8,8 @@ import org.matsim.pt.transitSchedule.api.TransitSchedule;
 import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
 import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
+import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters;
 import ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox;
 
@@ -16,12 +18,17 @@ public class DefaultRouterFactory implements RouterFactory {
 	private final Network network;
 	private final TransitSchedule schedule;
 	private final Collection<String> vehicleModes;
+	private final TransitStageTransformer transitStageTransformer;
+	private final TicketGenerator ticketGenerator;
 
-	public DefaultRouterFactory(RoutingParameters parameters, Network network, TransitSchedule schedule) {
+	public DefaultRouterFactory(RoutingParameters parameters, Network network, TransitSchedule schedule,
+			TransitStageTransformer transitStageTransformer, TicketGenerator ticketGenerator) {
 		this.parameters = parameters;
 		this.network = network;
 		this.schedule = schedule;
 		this.vehicleModes = ScheduleUtils.getVehicleModes(schedule);
+		this.transitStageTransformer = transitStageTransformer;
+		this.ticketGenerator = ticketGenerator;
 	}
 
 	@Override
@@ -30,8 +37,8 @@ public class DefaultRouterFactory implements RouterFactory {
 
 		EnrichedTransitRouter router = toolbox.getEnrichedTransitRouter();
 		FrequencyCalculator frequencyCalculator = toolbox.getFrequencyCalculator();
-		// TransitStageTransformer transformer = toolbox.getTransitStageTransformer();
 
-		return new DefaultRouter(network, router, frequencyCalculator, vehicleModes); // , transformer);
+		return new DefaultRouter(network, router, frequencyCalculator, vehicleModes, transitStageTransformer,
+				ticketGenerator);
 	}
 }

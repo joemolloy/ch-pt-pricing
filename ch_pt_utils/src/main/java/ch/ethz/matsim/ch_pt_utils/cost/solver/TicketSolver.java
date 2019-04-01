@@ -9,7 +9,6 @@ import org.gnu.glpk.GLPK;
 import org.gnu.glpk.GLPKConstants;
 import org.gnu.glpk.SWIGTYPE_p_double;
 import org.gnu.glpk.SWIGTYPE_p_int;
-import org.gnu.glpk.glp_cpxcp;
 import org.gnu.glpk.glp_iocp;
 import org.gnu.glpk.glp_prob;
 import org.gnu.glpk.glp_smcp;
@@ -34,6 +33,10 @@ public class TicketSolver {
 	}
 
 	public Result solve(int numberOfStages, Collection<Ticket> inputTickets) {
+		if (inputTickets.size() == 0) {
+			return new Result();
+		}
+
 		List<Ticket> tickets = new LinkedList<>(inputTickets);
 
 		// Set up problem
@@ -41,6 +44,8 @@ public class TicketSolver {
 		glp_prob problem = GLPK.glp_create_prob();
 		GLPK.glp_add_cols(problem, tickets.size());
 		GLPK.glp_add_rows(problem, numberOfStages);
+		GLPK.glp_java_set_msg_lvl(GLPKConstants.GLP_JAVA_MSG_LVL_OFF);
+		GLPK.glp_term_out(GLPKConstants.GLP_OFF);
 
 		for (int i = 1; i <= tickets.size(); i++) {
 			// All variables are binary variables
@@ -77,7 +82,7 @@ public class TicketSolver {
 			GLPK.glp_set_obj_coef(problem, i, tickets.get(i - 1).getPrice());
 		}
 
-		GLPK.glp_write_lp(problem, new glp_cpxcp(), "/home/sebastian/problem");
+		// GLPK.glp_write_lp(problem, new glp_cpxcp(), "/home/sebastian/problem");
 
 		// LP Solution
 		glp_smcp simplexParameters = new glp_smcp();
@@ -91,8 +96,8 @@ public class TicketSolver {
 			int mipReturnValue = GLPK.glp_intopt(problem, parameters);
 
 			if (mipReturnValue == 0) {
-				System.out.println("Simplex return value: " + simplexReturnValue);
-				System.out.println("MIP return value: " + mipReturnValue);
+				//System.out.println("Simplex return value: " + simplexReturnValue);
+				//System.out.println("MIP return value: " + mipReturnValue);
 
 				double price = GLPK.glp_mip_obj_val(problem);
 
