@@ -19,6 +19,8 @@ server that offers an API and a simple web interface.
 
 ## Preparation
 
+> This is outdated. (Should be updated by Joe Molloy ;)
+
 All data preparation is found in `/preparation`. In principle, the script
 `/preparation/prepare.sh` should do all the work. It requires four input
 parameters, which are:
@@ -43,6 +45,9 @@ To run the preparation scripts the following is needed:
 - `python-docx` package via `pip` (to read e.g. TVSZ station data)
 
 A full set of input files is currently located at `/nas/ivtmatsim/pt_data`. The HAFAS file can be found at `/nas/ivtmatsim/scenarios/switzerland/data/hafas/`.
+
+A set of prepared files can be found at:
+https://polybox.ethz.ch/index.php/s/IsFLUXOdvLajFZr
 
 ## Java framework
 
@@ -76,11 +81,13 @@ The batch router is started as follows:
 java -Xmx10G -cp ch_pt_utils-{VERSION}.jar ch.ethz.matsim.ch_pt_utils.routing.batch.RunBatchRouting [OPTIONS]
 ```
 
-There are four mandatory options:
+There are six mandatory options:
 - `--network-path [PATH]` to a MATSim network file
 - `--schedule-path [PATH]` to a MATSim schedule file
 - `--requests-path [PATH]` to the CSV file mentioned above
 - `--output-path [PATH]` to the output file path
+- `--triangles-path [PATH]` to a CSV file containing all SBB distance triangles
+- `--zones-path [PATH]` to a geojson file containing all stations and their authorities / zones
 
 Optional are the following settings:
 - `--threads [NUMBER]` determines how many routing threads will be used
@@ -136,9 +143,8 @@ a number of input arguments:
 1. The port on which to listen for the web service.
 2. Path to `switzerland_transit_schedule.xml.gz`
 3. Path to `switzerland_network.xml.gz`
-4. Path to `t651.csv` (from the preparation output)
+4. Path to `stations.geojson` (from the preparation output)
 5. Path to `t603.csv` (from the preparation output)
-6. Path to `t603_bold.txt` (from the preparation output)
 
 Furthermore, the server requires a working installation of [GLPK for Java][2]. Note
 that it is usually necessary to build it manually and put it for instance in `~/glpk`.
@@ -146,7 +152,7 @@ that it is usually necessary to build it manually and put it for instance in `~/
 An example how to run:
 
 ```
-java -Xmx10G -Djava.library.path=~/glpk/lib/jni ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer 7050 switzerland_transit_schedule.xml.gz switzerland_network.xml.gz t651.csv t603.csv t603_bold.txt
+java -Xmx10G -Djava.library.path=~/glpk/lib/jni ch.ethz.matsim.ch_pt_utils.server.RunRoutingServer 7050 switzerland_transit_schedule.xml.gz switzerland_network.xml.gz stations.geojson t603.csv
 ```
 
 Once the web service is running it can be accessed via `http://localhost:7050`. It is also possible
