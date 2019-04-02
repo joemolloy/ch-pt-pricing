@@ -50,6 +50,7 @@ public class BatchRouter {
 			});
 
 			thread.setName("BatchRouter." + (i + 1));
+			thread.setUncaughtExceptionHandler(this::handleException);
 			thread.start();
 
 			threads.add(thread);
@@ -73,6 +74,10 @@ public class BatchRouter {
 
 		isFinished.set(true);
 		progressThread.join();
+	}
+
+	private void handleException(Thread t, Throwable e) {
+		throw new RuntimeException(e);
 	}
 
 	private void runProgress(AtomicInteger progressCounter, AtomicBoolean isFinished,
