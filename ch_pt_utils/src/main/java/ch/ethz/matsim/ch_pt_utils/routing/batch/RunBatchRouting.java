@@ -27,7 +27,6 @@ import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalReader;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Zone;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.Switzerland;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.InterchangeReader;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.Triangle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleReader;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
@@ -39,13 +38,12 @@ public class RunBatchRouting {
 	static public void main(String[] args) throws IOException, ConfigurationException, InterruptedException {
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("network-path", "schedule-path", "requests-path", "output-path", "zones-path",
-						"triangles-path", "interchanges-path") //
+						"triangles-path") //
 				.allowOptions("threads", "batch-size", "parameters-path") //
 				.build();
 
 		File zonesPath = new File(cmd.getOptionStrict("zones-path"));
 		File trianglesPath = new File(cmd.getOptionStrict("triangles-path"));
-		File interchangesPath = new File(cmd.getOptionStrict("interchanges-path"));
 
 		int numberOfRunners = cmd.getOption("threads").map(Integer::parseInt)
 				.orElse(Runtime.getRuntime().availableProcessors());
@@ -86,10 +84,7 @@ public class RunBatchRouting {
 		TriangleReader triangleReader = new TriangleReader();
 		Collection<Triangle> triangles = triangleReader.read(trianglesPath);
 
-		InterchangeReader interchangeReader = new InterchangeReader();
-		Collection<Long> interchangeIds = interchangeReader.read(interchangesPath);
-
-		TriangleRegistry triangleRegistry = new TriangleRegistry(triangles, interchangeIds);
+		TriangleRegistry triangleRegistry = new TriangleRegistry(triangles);
 
 		TransitStageTransformer transitStageTransformer = new TransitStageTransformer(scenario.getTransitSchedule());
 		TicketGenerator ticketGenerator = Switzerland.createTicketGenerator(zonalRegistry, triangleRegistry);

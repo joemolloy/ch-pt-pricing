@@ -1,50 +1,38 @@
 package ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.geojson.Feature;
+import org.geojson.FeatureCollection;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ZonalReader {
 	public Collection<Authority> readAuthorities(File path) throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
-		String line = null;
-		List<String> header = null;
-
+		FeatureCollection featureCollection = new ObjectMapper()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				.readValue(path, FeatureCollection.class);
 		Map<String, Authority> authorities = new HashMap<>();
 
-		while ((line = reader.readLine()) != null) {
-			List<String> row = Arrays.asList(line.split(";"));
+		for (Feature feature : featureCollection.getFeatures()) {
+			String authorityId = feature.getProperty("station_authority");
 
-			if (header == null) {
-				header = row;
-			} else {
-				String authorityId = row.get(header.indexOf("authority_id"));
-
-				if (!authorities.containsKey(authorityId)) {
-					Authority authority = new Authority(authorityId);
-					authorities.put(authorityId, authority);
-				}
+			if (authorityId != null) {
+				authorities.put(authorityId, new Authority(authorityId));
 			}
 		}
-
-		reader.close();
 
 		return authorities.values();
 	}
 
 	public Collection<Zone> readZones(File path, Collection<Authority> authorities) throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
-		String line = null;
-		List<String> header = null;
-
 		Map<String, Authority> authoritiesMap = new HashMap<>();
 
 		for (Authority authority : authorities) {
@@ -53,16 +41,17 @@ public class ZonalReader {
 
 		Map<Authority, Map<Long, Zone.Builder>> builders = new HashMap<>();
 
-		while ((line = reader.readLine()) != null) {
-			List<String> row = Arrays.asList(line.split(";"));
+		FeatureCollection featureCollection = new ObjectMapper()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				.readValue(path, FeatureCollection.class);
 
-			if (header == null) {
-				header = row;
-			} else {
-				String authorityId = row.get(header.indexOf("authority_id"));
-				long zoneId = Long.parseLong(row.get(header.indexOf("zone_id")));
-				long hafasId = Long.parseLong(row.get(header.indexOf("hafas_id")));
+		for (Feature feature : featureCollection.getFeatures()) {
+			String authorityId = feature.getProperty("station_authority");
+			Double rawZoneId = feature.getProperty("station_zone");
+			Integer hafasId = feature.getProperty("hafas_id");
 
+			if (authorityId != null && rawZoneId != null && hafasId != null) {
+				long zoneId = (long) (double) rawZoneId;
 				Authority authority = authoritiesMap.get(authorityId);
 
 				if (!builders.containsKey(authority)) {
@@ -79,8 +68,6 @@ public class ZonalReader {
 				builder.addHafasId(hafasId);
 			}
 		}
-
-		reader.close();
 
 		List<Zone> zones = new LinkedList<>();
 

@@ -1,35 +1,27 @@
-package ch.ethz.matsim.ch_pt_utils.cost.tickets;
+package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland;
 
 import java.util.Collection;
 import java.util.List;
 
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
+import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.DistanceTariff;
 
-public class FallbackTicketGenerator implements TicketGenerator {
+public class DistanceTicketGenerator implements TicketGenerator {
 	private final TicketGenerator delegate;
 
-	private final double pricePerKmFullFare;
-	private final double pricePerKmHalfFare;
-	private final double minimumPriceFullFare;
-	private final double minimumPriceHalfFare;
-
-	public FallbackTicketGenerator(TicketGenerator delegate, double minimumPriceFullFare, double pricePerKmFullFare,
-			double minimumPriceHalfFare, double pricePerKmHalfFare) {
+	public DistanceTicketGenerator(TicketGenerator delegate) {
 		this.delegate = delegate;
-		this.pricePerKmFullFare = pricePerKmFullFare;
-		this.pricePerKmHalfFare = pricePerKmHalfFare;
-		this.minimumPriceFullFare = minimumPriceFullFare;
-		this.minimumPriceHalfFare = minimumPriceHalfFare;
 	}
 
 	private double calculatePrice(double distance, boolean halfFare) {
 		double distanceKm = distance * 1e-3;
 
 		if (!halfFare) {
-			return Math.max(minimumPriceFullFare, pricePerKmFullFare * distanceKm);
+			return DistanceTariff.calculateCost(distanceKm);
 		} else {
-			return Math.max(minimumPriceHalfFare, pricePerKmHalfFare * distanceKm);
+			return 0.5 * DistanceTariff.calculateCost(distanceKm);
 		}
 	}
 
@@ -49,7 +41,7 @@ public class FallbackTicketGenerator implements TicketGenerator {
 			if (coveringTickets == 0) {
 				double cost = calculatePrice(stages.get(i).getDistance(), halfFare);
 				cost = Math.floor(cost * 100.0 / 20.0) * 20.0 / 100.0;
-				Ticket ticket = new Ticket(stages.size(), cost, "Unknown Tariff");
+				Ticket ticket = new Ticket(stages.size(), cost, "Generic Distance");
 				ticket.getCoverage().set(i);
 				tickets.add(ticket);
 			}

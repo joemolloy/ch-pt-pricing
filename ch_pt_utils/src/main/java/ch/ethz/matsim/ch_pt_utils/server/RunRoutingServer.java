@@ -23,7 +23,6 @@ import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalReader;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Zone;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.Switzerland;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.InterchangeReader;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.Triangle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleReader;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
@@ -40,18 +39,10 @@ public class RunRoutingServer {
 		File networkPath = new File(args[2]);
 		File zonesPath = new File(args[3]);
 		File trianglesPath = new File(args[4]);
-		File interchangesPath = new File(args[5]);
 
 		// Read schedule data
 		Config config = ConfigUtils.createConfig();
 		Scenario scenario = ScenarioUtils.createScenario(config);
-
-		new TransitScheduleReader(scenario).readFile(transitSchedulePath.toString());
-		new MatsimNetworkReader(scenario.getNetwork()).readFile(networkPath.toString());
-
-		RoutingParameters parameters = new RoutingParameters();
-		RoutingToolbox toolbox = new RoutingToolbox(parameters, scenario.getNetwork(), scenario.getTransitSchedule());
-		EnrichedTransitRouter enrichedTransitRouter = toolbox.getEnrichedTransitRouter();
 
 		// Set up cost calculation
 
@@ -64,13 +55,17 @@ public class RunRoutingServer {
 		TriangleReader triangleReader = new TriangleReader();
 		Collection<Triangle> triangles = triangleReader.read(trianglesPath);
 
-		InterchangeReader interchangeReader = new InterchangeReader();
-		Collection<Long> interchangeIds = interchangeReader.read(interchangesPath);
-
-		TriangleRegistry triangleRegistry = new TriangleRegistry(triangles, interchangeIds);
+		TriangleRegistry triangleRegistry = new TriangleRegistry(triangles);
+		
+		new TransitScheduleReader(scenario).readFile(transitSchedulePath.toString());
+		new MatsimNetworkReader(scenario.getNetwork()).readFile(networkPath.toString());
 
 		TicketGenerator ticketGenerator = Switzerland.createTicketGenerator(zonalRegistry, triangleRegistry);
 		TransitStageTransformer transformer = new TransitStageTransformer(scenario.getTransitSchedule());
+
+		RoutingParameters parameters = new RoutingParameters();
+		RoutingToolbox toolbox = new RoutingToolbox(parameters, scenario.getNetwork(), scenario.getTransitSchedule());
+		EnrichedTransitRouter enrichedTransitRouter = toolbox.getEnrichedTransitRouter();
 
 		Javalin app = Javalin.create();
 		app.enableCorsForAllOrigins();

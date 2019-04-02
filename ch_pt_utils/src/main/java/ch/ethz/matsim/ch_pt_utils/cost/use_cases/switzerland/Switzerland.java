@@ -1,7 +1,6 @@
 package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland;
 
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.CompositeTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.tickets.FallbackTicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.trajectory.TrajectoryTicketAdapter;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.trajectory.TrajectoryTicketGenerator;
@@ -16,8 +15,10 @@ import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.AWelle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.EngadinMobil;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Frimobil;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Libero;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Mobilis;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Ostwind;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Passepartout;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.TVSZ;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.TVZG;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.TransReno;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.zonal.Unireso;
@@ -41,9 +42,11 @@ public class Switzerland {
 		zonalTicketGenerator.addGenerator(EngadinMobil.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(Frimobil.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(Libero.createTicketGenerator(zonalRegistry));
+		zonalTicketGenerator.addGenerator(Mobilis.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(Ostwind.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(Passepartout.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(TransReno.createTicketGenerator(zonalRegistry));
+		zonalTicketGenerator.addGenerator(TVSZ.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(TVZG.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(Unireso.createTicketGenerator(zonalRegistry));
 		zonalTicketGenerator.addGenerator(ZVV.createTicketGenerator(zonalRegistry));
@@ -58,8 +61,7 @@ public class Switzerland {
 		ticketGenerator.addGenerator(createZonalTicketGenerator(zonalRegistry));
 		ticketGenerator.addGenerator(TransReno.createTrajectoryTicketGenerator(zonalRegistry));
 
-		FallbackTicketGenerator fallbackTicketGenerator = new FallbackTicketGenerator(ticketGenerator, 2.0, 0.25, 1.0,
-				0.125);
+		DistanceTicketGenerator fallbackTicketGenerator = new DistanceTicketGenerator(ticketGenerator);
 
 		return fallbackTicketGenerator;
 	}

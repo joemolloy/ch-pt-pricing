@@ -12,7 +12,7 @@ import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Authority;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.ZonalRegistry;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Zone;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.tickets.SingleZoneTicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.SBBTicketGenerator;
+import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.DistanceTariff;
 
 public class TransReno {
 	private TransReno() {
@@ -36,6 +36,6 @@ public class TransReno {
 	static double calculateDistancePrice(double distance, boolean halfFare) {
 		double distanceKm = Math.ceil(1e-3 * distance);
 		double factor = halfFare ? 0.5 : 1.0;
-		return factor * SBBTicketGenerator.calculateFullCost(distanceKm);
+		return factor * DistanceTariff.calculateCost(distanceKm);
 	}
 }

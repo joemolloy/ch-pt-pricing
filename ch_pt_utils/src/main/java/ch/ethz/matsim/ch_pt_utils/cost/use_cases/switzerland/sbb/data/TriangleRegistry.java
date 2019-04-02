@@ -13,24 +13,17 @@ public class TriangleRegistry {
 	private Collection<Triangle> triangles;
 	private Map<Tuple<Long, Long>, Collection<Long>> connections = new HashMap<>();
 
-	public TriangleRegistry(Collection<Triangle> triangles, Collection<Long> interchangeIds) {
+	public TriangleRegistry(Collection<Triangle> triangles) {
 		this.triangles = triangles;
 
 		for (Triangle originTriangle : triangles) {
 			for (Triangle destinationTriangle : triangles) {
 				Tuple<Long, Long> connection = new Tuple<>(originTriangle.getTriangleId(),
 						destinationTriangle.getTriangleId());
-				connections.put(connection, new HashSet<>());
-
 				Set<Long> originHafasIds = new HashSet<>(originTriangle.getHafasIds());
 				Set<Long> destinationHafasIds = new HashSet<>(destinationTriangle.getHafasIds());
 				originHafasIds.retainAll(destinationHafasIds);
-
-				for (long connectionId : originHafasIds) {
-					if (interchangeIds.contains(connectionId)) {
-						connections.get(connection).add(connectionId);
-					}
-				}
+				connections.put(connection, originHafasIds);
 			}
 		}
 	}
