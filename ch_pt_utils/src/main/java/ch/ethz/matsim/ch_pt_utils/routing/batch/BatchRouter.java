@@ -130,7 +130,7 @@ public class BatchRouter {
 
 			for (PlanRoutingRequest request : requests) {
 				results.add(router.process(request));
-				progressCounter.incrementAndGet();
+				progressCounter.addAndGet(request.getTripRequests().size());
 			}
 
 			synchronized (resultConsumer) {
