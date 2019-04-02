@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -32,25 +33,29 @@ public class CsvRequestIterator implements Iterator<TripRoutingRequest> {
 	public CsvRequestIterator(InputStream inputStream) throws IOException {
 		this.reader = new BufferedReader(new InputStreamReader(inputStream));
 
-		String row = this.reader.readLine();
+		advance();
 
-		if (row == null) {
-			throw new IllegalStateException();
+		if (next != null) {
+			header = new ArrayList<>(next);
+			advance();
 		} else {
-			header = Arrays.asList(row.split(";"));
+			throw new IllegalStateException();
 		}
 	}
 
 	@Override
 	public boolean hasNext() {
+		return next != null;
+	}
+
+	private void advance() {
 		try {
 			String row = reader.readLine();
 
 			if (row == null) {
-				return false;
+				next = null;
 			} else {
 				next = Arrays.asList(row.split(";"));
-				return true;
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -70,6 +75,10 @@ public class CsvRequestIterator implements Iterator<TripRoutingRequest> {
 		Coord originCoord = new Coord(originX, originY);
 		Coord destinationCoord = new Coord(destinationX, destinationY);
 
-		return new TripRoutingRequest(planId, tripId, originCoord, destinationCoord, departureTime);
+		TripRoutingRequest returnRequest = new TripRoutingRequest(planId, tripId, originCoord, destinationCoord,
+				departureTime);
+
+		advance();
+		return returnRequest;
 	}
 }

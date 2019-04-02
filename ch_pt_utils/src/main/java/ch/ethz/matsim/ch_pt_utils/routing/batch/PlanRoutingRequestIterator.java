@@ -9,7 +9,7 @@ import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
 
 public class PlanRoutingRequestIterator implements Iterator<PlanRoutingRequest> {
 	private final Iterator<TripRoutingRequest> delegate;
-	private TripRoutingRequest head = null;
+	private TripRoutingRequest pendingRequest;
 
 	public PlanRoutingRequestIterator(Iterator<TripRoutingRequest> delegate) {
 		this.delegate = delegate;
@@ -17,32 +17,30 @@ public class PlanRoutingRequestIterator implements Iterator<PlanRoutingRequest> 
 
 	@Override
 	public PlanRoutingRequest next() {
-		if (head == null) {
-			head = delegate.next();
+		List<TripRoutingRequest> currentRequests = new LinkedList<>();
+
+		if (pendingRequest != null) {
+			currentRequests.add(pendingRequest);
+			pendingRequest = null;
 		}
-
-		List<TripRoutingRequest> trips = new LinkedList<>();
-		trips.add(head);
-
-		TripRoutingRequest newHead = null;
 
 		while (delegate.hasNext()) {
 			TripRoutingRequest next = delegate.next();
+			String planId = currentRequests.size() == 0 ? null : currentRequests.get(0).getPlanId();
 
-			if (next.getPlanId().equals(head.getPlanId())) {
-				trips.add(next);
+			if (planId == null || next.getPlanId().equals(planId)) {
+				currentRequests.add(next);
 			} else {
-				newHead = next;
+				pendingRequest = next;
 				break;
 			}
 		}
 
-		head = newHead;
-		return new PlanRoutingRequest(trips.get(0).getPlanId(), trips);
+		return new PlanRoutingRequest(currentRequests.get(0).getPlanId(), currentRequests);
 	}
 
 	@Override
 	public boolean hasNext() {
-		return delegate.hasNext() || head != null;
+		return delegate.hasNext() || pendingRequest != null;
 	}
 }
