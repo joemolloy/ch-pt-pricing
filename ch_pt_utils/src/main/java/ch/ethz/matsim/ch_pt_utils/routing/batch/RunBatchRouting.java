@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Optional;
 
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
@@ -90,7 +91,7 @@ public class RunBatchRouting {
 		TicketGenerator ticketGenerator = Switzerland.createTicketGenerator(zonalRegistry, triangleRegistry);
 
 		RouterFactory factory = new DefaultRouterFactory(parameters, scenario.getNetwork(),
-				scenario.getTransitSchedule(), transitStageTransformer, ticketGenerator);
+				scenario.getTransitSchedule(), Optional.of(transitStageTransformer), Optional.of(ticketGenerator));
 		BatchRouter batchRouter = new BatchRouter(factory, numberOfRunners, batchSize);
 
 		batchRouter.run(new PlanRoutingRequestIterator(requestIterator), resultConsumer, numberOfRequests);

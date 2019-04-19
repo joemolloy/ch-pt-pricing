@@ -1,6 +1,7 @@
 package ch.ethz.matsim.ch_pt_utils.routing.router;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
@@ -18,11 +19,15 @@ public class DefaultRouterFactory implements RouterFactory {
 	private final Network network;
 	private final TransitSchedule schedule;
 	private final Collection<String> vehicleModes;
-	private final TransitStageTransformer transitStageTransformer;
-	private final TicketGenerator ticketGenerator;
+	private final Optional<TransitStageTransformer> transitStageTransformer;
+	private final Optional<TicketGenerator> ticketGenerator;
+
+	public DefaultRouterFactory(RoutingParameters parameters, Network network, TransitSchedule schedule) {
+		this(parameters, network, schedule, Optional.empty(), Optional.empty());
+	}
 
 	public DefaultRouterFactory(RoutingParameters parameters, Network network, TransitSchedule schedule,
-			TransitStageTransformer transitStageTransformer, TicketGenerator ticketGenerator) {
+			Optional<TransitStageTransformer> transitStageTransformer, Optional<TicketGenerator> ticketGenerator) {
 		this.parameters = parameters;
 		this.network = network;
 		this.schedule = schedule;

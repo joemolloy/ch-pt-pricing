@@ -3,6 +3,7 @@ package ch.ethz.matsim.ch_pt_utils.routing.router;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -30,11 +31,17 @@ public class DefaultRouter implements Router {
 	private final EnrichedTransitRouter router;
 	private final FrequencyCalculator frequencyCalculator;
 	private final Collection<String> vehicleModes;
-	private final TransitStageTransformer transformer;
-	private final TicketGenerator ticketGenerator;
+	private final Optional<TransitStageTransformer> transformer;
+	private final Optional<TicketGenerator> ticketGenerator;
 
 	public DefaultRouter(Network network, EnrichedTransitRouter router, FrequencyCalculator frequencyCalculator,
-			Collection<String> vehicleModes, TransitStageTransformer transformer, TicketGenerator ticketGenerator) {
+			Collection<String> vehicleModes) {
+		this(network, router, frequencyCalculator, vehicleModes, Optional.empty(), Optional.empty());
+	}
+
+	public DefaultRouter(Network network, EnrichedTransitRouter router, FrequencyCalculator frequencyCalculator,
+			Collection<String> vehicleModes, Optional<TransitStageTransformer> transformer,
+			Optional<TicketGenerator> ticketGenerator) {
 		this.network = network;
 		this.router = router;
 		this.frequencyCalculator = frequencyCalculator;
@@ -111,15 +118,20 @@ public class DefaultRouter implements Router {
 			// II) Calculate frequency
 			double frequency = frequencyCalculator.calculateFrequency(fromFacility, toFacility, departureTime);
 
+			boolean isTicketPriceValid = false;
+			double ticketPrice = -1.0;
+
 			// III) Calculate trip price
-			List<TransitStage> tripTransitStages = transformer.getStages(legs);
-			planTransitStages.addAll(tripTransitStages);
+			if (transformer.isPresent() && ticketGenerator.isPresent()) {
+				List<TransitStage> tripTransitStages = transformer.get().getStages(legs);
+				planTransitStages.addAll(tripTransitStages);
 
-			Collection<Ticket> tripTickets = ticketGenerator.createTickets(tripTransitStages, false);
-			TicketSolver.Result ticketResult = new TicketSolver().solve(tripTransitStages.size(), tripTickets);
+				Collection<Ticket> tripTickets = ticketGenerator.get().createTickets(tripTransitStages, false);
+				TicketSolver.Result ticketResult = new TicketSolver().solve(tripTransitStages.size(), tripTickets);
 
-			boolean isTicketPriceValid = ticketResult.isValid;
-			double ticketPrice = ticketResult.price;
+				isTicketPriceValid = ticketResult.isValid;
+				ticketPrice = ticketResult.price;
+			}
 
 			tripRoutingResults.add(new TripRoutingResult(tripRequest.getTripId(), numberOfTransfers, isOnlyWalk,
 					isTicketPriceValid, ticketPrice, inVehicleTime, inVehicleDistance, transferWalkTime,
@@ -127,12 +139,17 @@ public class DefaultRouter implements Router {
 					accessEgressWalkDistance, frequency));
 		}
 
-		// III) Calculate plan price
-		Collection<Ticket> tourTickets = ticketGenerator.createTickets(planTransitStages, false);
-		TicketSolver.Result ticketResult = new TicketSolver().solve(planTransitStages.size(), tourTickets);
+		boolean isTicketPriceValid = false;
+		double ticketPrice = -1.0;
 
-		boolean isTicketPriceValid = ticketResult.isValid;
-		double ticketPrice = ticketResult.price;
+		// III) Calculate plan price
+		if (transformer.isPresent() && ticketGenerator.isPresent()) {
+			Collection<Ticket> tourTickets = ticketGenerator.get().createTickets(planTransitStages, false);
+			TicketSolver.Result ticketResult = new TicketSolver().solve(planTransitStages.size(), tourTickets);
+
+			isTicketPriceValid = ticketResult.isValid;
+			ticketPrice = ticketResult.price;
+		}
 
 		return new PlanRoutingResult(planRequest.getPlanId(), tripRoutingResults, ticketPrice, isTicketPriceValid);
 	}
