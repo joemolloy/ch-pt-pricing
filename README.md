@@ -68,7 +68,7 @@ trips in an easy way. What needs to be provided is a csv file with the following
 content:
 
 ```
-request_id;origin_x;origin_y;destination_x;destination_y;departure_time
+plan_is;trip_id;origin_x;origin_y;destination_x;destination_y;departure_time
 ```
 
 The coordinates should be given in the same projection as the transit schedule
