@@ -1,5 +1,11 @@
 package ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+
 public class DistanceTariff {
 	private final static double[] LOOKUP = createLookupTable();
 
@@ -10,6 +16,21 @@ public class DistanceTariff {
 		} else {
 			throw new IllegalStateException("Distance is too big: " + distance);
 		}
+	}
+
+	public static void write(File path) throws IOException {
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path)));
+		writer.write(String.format("distance;price\n"));
+
+		for (int i = 0; i < LOOKUP.length; i++) {
+			writer.write(String.format("%d;%.2f\n", i, LOOKUP[i]));
+		}
+
+		writer.close();
+	}
+
+	static public void main(String[] args) throws IOException {
+		write(new File(args[0]));
 	}
 
 	private static double[] createLookupTable() {

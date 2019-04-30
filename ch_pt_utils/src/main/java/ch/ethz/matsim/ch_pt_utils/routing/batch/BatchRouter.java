@@ -77,6 +77,7 @@ public class BatchRouter {
 	}
 
 	private void handleException(Thread t, Throwable e) {
+		e.printStackTrace();
 		throw new RuntimeException(e);
 	}
 
