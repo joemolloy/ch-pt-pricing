@@ -5,4 +5,5 @@ import java.util.List;
 
 public class PlanRequest {
 	public List<TripRequest> trips = new LinkedList<>();
+	public boolean isHalfFare;
 }
