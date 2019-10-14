@@ -78,6 +78,7 @@ public class RoutingHandler implements Handler {
 			PlanResponse planResponse = new PlanResponse();
 
 			boolean isHalfFare = planRequest.isHalfFare;
+			planResponse.isHalfFare = isHalfFare;
 
 			List<TransitStage> transitStages = new LinkedList<>();
 

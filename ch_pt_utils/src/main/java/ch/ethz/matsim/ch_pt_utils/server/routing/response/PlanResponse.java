@@ -8,6 +8,7 @@ public class PlanResponse {
 	public List<TicketResponse> tickets = new LinkedList<>();
 	
 	public double totalPrice;
+	public boolean isHalfFare;
 	
 	public String error;
 }
