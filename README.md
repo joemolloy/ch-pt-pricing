@@ -159,7 +159,7 @@ Once the web service is running it can be accessed via `http://localhost:7050`. 
 to contact the API directly, e.g.:
 
 ```
-curl -X POST -H "Content-Type:application/json" http://localhost:7050/ -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0}]}'
+curl -X POST -H "Content-Type:application/json" http://localhost:7050/api -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0}]}'
 ```
 
 [1]: https://pypi.org/project/stapler/
