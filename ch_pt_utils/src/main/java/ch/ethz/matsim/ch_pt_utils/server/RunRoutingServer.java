@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import org.geotools.referencing.CRS;
+import org.gnu.glpk.GLPK;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -34,6 +35,9 @@ import io.javalin.Javalin;
 public class RunRoutingServer {
 	static public void main(String[] args)
 			throws NoSuchAuthorityCodeException, FactoryException, NoninvertibleTransformException, IOException {
+
+		System.out.println(GLPK.glp_version());
+
 		int port = Integer.parseInt(args[0]);
 		File transitSchedulePath = new File(args[1]);
 		File networkPath = new File(args[2]);
