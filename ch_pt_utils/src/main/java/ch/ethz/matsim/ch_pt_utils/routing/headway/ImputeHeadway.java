@@ -26,11 +26,11 @@ import ch.ethz.matsim.baseline_scenario.config.CommandLine;
 import ch.ethz.matsim.baseline_scenario.config.CommandLine.ConfigurationException;
 import ch.ethz.matsim.baseline_scenario.transit.routing.DefaultEnrichedTransitRoute;
 import ch.ethz.matsim.baseline_scenario.transit.routing.DefaultEnrichedTransitRouteFactory;
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingResult;
 import ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters;
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
 import ch.ethz.matsim.ch_pt_utils.routing.batch.BatchRouter;
+import ch.ethz.matsim.ch_pt_utils.routing.request.PlanRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.request.TripRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.result.PlanRoutingResult;
 import ch.ethz.matsim.ch_pt_utils.routing.router.DefaultRouterFactory;
 import ch.ethz.matsim.ch_pt_utils.routing.router.RouterFactory;
 
