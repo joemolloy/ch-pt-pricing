@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.request.PlanRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.request.TripRoutingRequest;
 
 public class PlanRoutingRequestIterator implements Iterator<PlanRoutingRequest> {
 	private final Iterator<TripRoutingRequest> delegate;

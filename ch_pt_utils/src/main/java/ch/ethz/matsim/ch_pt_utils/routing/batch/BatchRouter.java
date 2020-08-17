@@ -11,8 +11,8 @@ import java.util.function.Consumer;
 import org.apache.log4j.Logger;
 import org.matsim.core.utils.misc.Time;
 
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.request.PlanRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.result.PlanRoutingResult;
 import ch.ethz.matsim.ch_pt_utils.routing.router.Router;
 import ch.ethz.matsim.ch_pt_utils.routing.router.RouterFactory;
 

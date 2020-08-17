@@ -11,7 +11,7 @@ import java.util.List;
 
 import org.matsim.api.core.v01.Coord;
 
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.request.TripRoutingRequest;
 
 public class CsvRequestIterator implements Iterator<TripRoutingRequest> {
 	private final BufferedReader reader;

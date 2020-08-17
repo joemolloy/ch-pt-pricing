@@ -6,8 +6,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.function.Consumer;
 
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingResult;
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.result.PlanRoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.result.TripRoutingResult;
 
 public class CsvResultConsumer implements Consumer<PlanRoutingResult> {
 	private final BufferedWriter writer;

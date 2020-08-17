@@ -1,6 +1,7 @@
 package ch.ethz.matsim.ch_pt_utils.routing.router;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -21,10 +22,10 @@ import ch.ethz.matsim.ch_pt_utils.cost.solver.TicketSolver;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.PlanRoutingResult;
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingRequest;
-import ch.ethz.matsim.ch_pt_utils.routing.TripRoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.request.PlanRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.request.TripRoutingRequest;
+import ch.ethz.matsim.ch_pt_utils.routing.result.PlanRoutingResult;
+import ch.ethz.matsim.ch_pt_utils.routing.result.TripRoutingResult;
 
 public class DefaultRouter implements Router {
 	private final Network network;
@@ -68,8 +69,12 @@ public class DefaultRouter implements Router {
 
 			List<Leg> legs = router.calculateRoute(fromFacility, toFacility, departureTime, null);
 
-			double inVehicleTime = 0.0;
-			double inVehicleDistance = 0.0;
+			double inTrainVehicleTime = 0.0;
+			double inLocalTransitVehicleTime = 0.0;
+			double inTrainVehicleDistance = 0.0;
+			double inLocalTransitVehicleDistance = 0.0;
+			
+			boolean isTrainJourney = false;
 
 			double initialWaitingTime = 0.0;
 			double transferWaitingTime = 0.0;
@@ -88,9 +93,13 @@ public class DefaultRouter implements Router {
 			for (Leg leg : legs) {
 				if (vehicleModes.contains(leg.getMode())) {
 					EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
-
-					inVehicleTime += route.getInVehicleTime();
-					inVehicleDistance += route.getDistance();
+					if (leg.getMode() == "rail") { //TODO: make this configurable
+						inTrainVehicleTime += route.getInVehicleTime();
+						inTrainVehicleDistance += route.getDistance();
+					} else  {
+						inLocalTransitVehicleTime += route.getInVehicleTime();
+						inLocalTransitVehicleDistance += route.getDistance();
+					}
 
 					if (isInitialTransitStage) {
 						isInitialTransitStage = false;
@@ -114,29 +123,33 @@ public class DefaultRouter implements Router {
 			}
 
 			numberOfTransfers = Math.max(0, numberOfTransfers);
+			isTrainJourney = inTrainVehicleTime > inLocalTransitVehicleTime;
 
 			// II) Calculate frequency
 			double frequency = frequencyCalculator.calculateFrequency(fromFacility, toFacility, departureTime);
 
 			boolean isTicketPriceValid = false;
 			double ticketPrice = -1.0;
-
+			
 			// III) Calculate trip price
 			if (transformer.isPresent() && ticketGenerator.isPresent()) {
 				List<TransitStage> tripTransitStages = transformer.get().getStages(legs);
 				planTransitStages.addAll(tripTransitStages);
 
-				Collection<Ticket> tripTickets = ticketGenerator.get().createTickets(tripTransitStages, false);
+				Collection<Ticket> tripTickets = ticketGenerator.get().createTickets(tripTransitStages, planRequest.isHalfFare());
 				TicketSolver.Result ticketResult = new TicketSolver().solve(tripTransitStages.size(), tripTickets);
 
 				isTicketPriceValid = ticketResult.isValid;
 				ticketPrice = ticketResult.price;
 			}
-
+			
 			tripRoutingResults.add(new TripRoutingResult(tripRequest.getTripId(), numberOfTransfers, isOnlyWalk,
-					isTicketPriceValid, ticketPrice, inVehicleTime, inVehicleDistance, transferWalkTime,
+					isTicketPriceValid, ticketPrice, 
+					inTrainVehicleTime, inTrainVehicleDistance, 
+					inLocalTransitVehicleTime, inLocalTransitVehicleDistance, 
+					transferWalkTime,
 					transferWalkDistance, initialWaitingTime, transferWaitingTime, accessEgressWalkTime,
-					accessEgressWalkDistance, frequency));
+					accessEgressWalkDistance, frequency, isTrainJourney));
 		}
 
 		boolean isTicketPriceValid = false;
