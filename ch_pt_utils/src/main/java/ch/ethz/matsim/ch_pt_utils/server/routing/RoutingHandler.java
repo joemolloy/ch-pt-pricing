@@ -113,9 +113,17 @@ public class RoutingHandler implements Handler {
 						departureTime, null);
 
 				double frequency = -1;
+				double frequencyWindowStart = planRequest.frequencyWindowStart;
 				if (planRequest.calculateFrequency) {
-					frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
-							departureTime);
+					if (frequencyWindowStart == -1 ) {
+						frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
+								departureTime);
+					} else {
+						frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
+								(frequencyWindowStart + planRequest.frequencyWindowEnd) / 2,
+								frequencyWindowStart, planRequest.frequencyWindowEnd);
+					}
+
 				}
 
 				TripResponse tripResponse = createTripResponse(legs, originLink, destinationLink, frequency);

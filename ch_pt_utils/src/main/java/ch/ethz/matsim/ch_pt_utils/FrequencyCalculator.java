@@ -20,12 +20,15 @@ public class FrequencyCalculator {
 		this.afterDepartureOffset = afterDepartureOffset;
 	}
 
-	public double calculateFrequency(Facility<?> originFacility, Facility<?> destinationFacilty, double departureTime) {
+	public double calculateFrequency(Facility<?> originFacility, Facility<?> destinationFacility, double departureTime) {
 		double earliestDepartureTime = departureTime - beforeDepartureOffset;
 		double latestDepartureTime = departureTime + afterDepartureOffset;
+		return calculateFrequency(originFacility, destinationFacility, departureTime, earliestDepartureTime, latestDepartureTime);
+	}
 
-		List<RaptorRoute> routes = raptor.calcRoutes(originFacility, destinationFacilty, earliestDepartureTime,
-				departureTime, latestDepartureTime, null);
+	public double calculateFrequency(Facility<?> originFacility, Facility<?> destinationFacility, double departureTime, double frequencyWindowStart, double frequencyWindowEnd) {
+		List<RaptorRoute> routes = raptor.calcRoutes(originFacility, destinationFacility, frequencyWindowStart,
+				departureTime, frequencyWindowEnd, null);
 
 		int numberOfPtRoutes = 0;
 
@@ -35,7 +38,8 @@ public class FrequencyCalculator {
 			}
 		}
 
-		return numberOfPtRoutes / (beforeDepartureOffset + afterDepartureOffset);
+		//number of routes per hour
+		return numberOfPtRoutes / ((beforeDepartureOffset + afterDepartureOffset) / 3600);
 	}
 
 	// Reflection magic starting here :)
