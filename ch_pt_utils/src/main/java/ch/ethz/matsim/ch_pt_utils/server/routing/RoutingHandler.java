@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.CRS;
 import org.matsim.api.core.v01.Coord;
@@ -57,9 +58,10 @@ public class RoutingHandler implements Handler {
 	private final TicketGenerator ticketGenerator;
 	private final TransitStageTransformer transformer;
 	private final Collection<String> transitModes;
+	private final FrequencyCalculator frequencyCalculator;
 
 	public RoutingHandler(EnrichedTransitRouter enrichedTransitRouter, Network network, TransitSchedule schedule,
-			TicketGenerator ticketGenerator, TransitStageTransformer transformer, CoordinateReferenceSystem scheduleCRS)
+						  TicketGenerator ticketGenerator, TransitStageTransformer transformer, FrequencyCalculator frequencyCalculator, CoordinateReferenceSystem scheduleCRS)
 			throws NoSuchAuthorityCodeException, FactoryException, NoninvertibleTransformException {
 		this.transform = CRS.findMathTransform(CRS.decode("EPSG:4326"), scheduleCRS);
 		this.network = network;
@@ -68,6 +70,7 @@ public class RoutingHandler implements Handler {
 		this.backTransform = transform.inverse();
 		this.ticketGenerator = ticketGenerator;
 		this.transformer = transformer;
+		this.frequencyCalculator = frequencyCalculator;
 		this.transitModes = ScheduleUtils.getVehicleModes(schedule);
 	}
 
@@ -109,7 +112,13 @@ public class RoutingHandler implements Handler {
 				List<Leg> legs = enrichedTransitRouter.calculateRoute(originFacility, destinationFacility,
 						departureTime, null);
 
-				TripResponse tripResponse = createTripResponse(legs, originLink, destinationLink);
+				double frequency = 0;
+				if (planRequest.calculateFrequency) {
+					frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
+							departureTime);
+				}
+
+				TripResponse tripResponse = createTripResponse(legs, originLink, destinationLink, frequency);
 				planResponse.trips.add(tripResponse);
 
 				transitStages.addAll(transformer.getStages(legs));
@@ -148,12 +157,13 @@ public class RoutingHandler implements Handler {
 		}
 	}
 
-	private TripResponse createTripResponse(List<Leg> legs, Link originLink, Link destinationLink)
+	private TripResponse createTripResponse(List<Leg> legs, Link originLink, Link destinationLink, double frequency)
 			throws MismatchedDimensionException, TransformException {
 		TripResponse tripResponse = new TripResponse();
 
 		tripResponse.originStreetName = (String) originLink.getAttributes().getAttribute("osm:way:name");
 		tripResponse.destinationStreetName = (String) destinationLink.getAttributes().getAttribute("osm:way:name");
+		tripResponse.frequency = frequency;
 
 		if (tripResponse.originStreetName == null) {
 			tripResponse.originStreetName = "Unknown";

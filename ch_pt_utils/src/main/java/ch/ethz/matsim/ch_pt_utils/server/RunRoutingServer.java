@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
 import org.geotools.referencing.CRS;
 import org.gnu.glpk.GLPK;
 import org.matsim.api.core.v01.Scenario;
@@ -70,11 +71,12 @@ public class RunRoutingServer {
 		RoutingParameters parameters = new RoutingParameters();
 		RoutingToolbox toolbox = new RoutingToolbox(parameters, scenario.getNetwork(), scenario.getTransitSchedule());
 		EnrichedTransitRouter enrichedTransitRouter = toolbox.getEnrichedTransitRouter();
+		FrequencyCalculator frequencyCalculator = toolbox.getFrequencyCalculator();
 
 		Javalin app = Javalin.create();
 		app.enableCorsForAllOrigins();
 		app.post("/api", new RoutingHandler(enrichedTransitRouter, scenario.getNetwork(), scenario.getTransitSchedule(),
-				ticketGenerator, transformer, CRS.decode("EPSG:2056")));
+				ticketGenerator, transformer, frequencyCalculator, CRS.decode("EPSG:2056")));
 		app.get("/", new FrontendHandler());
 		app.start(port);
 	}

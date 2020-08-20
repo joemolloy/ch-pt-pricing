@@ -122,7 +122,8 @@ public class SBBTicketGenerator implements TrajectoryTicketGenerator {
 			}
 
 			if (!coveredByAuthority) {
-				double cost = DistanceTariff.calculateCost(distance);
+				double costMultiplier = halfFare ? 0.5 : 0;
+				double cost = DistanceTariff.calculateCost(distance) * costMultiplier;
 
 				List<Long> stringTicketList = new LinkedList<>();
 

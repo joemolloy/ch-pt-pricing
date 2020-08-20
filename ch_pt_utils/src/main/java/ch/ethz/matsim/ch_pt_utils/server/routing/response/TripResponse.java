@@ -8,4 +8,6 @@ public class TripResponse {
 	
 	public String originStreetName;
 	public String destinationStreetName;
+
+	public double frequency;
 }
