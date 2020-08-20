@@ -112,7 +112,7 @@ public class RoutingHandler implements Handler {
 				List<Leg> legs = enrichedTransitRouter.calculateRoute(originFacility, destinationFacility,
 						departureTime, null);
 
-				double frequency = 0;
+				double frequency = -1;
 				if (planRequest.calculateFrequency) {
 					frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
 							departureTime);
