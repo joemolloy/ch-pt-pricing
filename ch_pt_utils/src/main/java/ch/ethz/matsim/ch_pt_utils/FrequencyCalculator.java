@@ -39,7 +39,7 @@ public class FrequencyCalculator {
 		}
 
 		//number of routes per hour
-		return numberOfPtRoutes / ((beforeDepartureOffset + afterDepartureOffset) / 3600);
+		return numberOfPtRoutes / ((frequencyWindowStart + frequencyWindowEnd) / 3600);
 	}
 
 	// Reflection magic starting here :)
