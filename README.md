@@ -19,8 +19,6 @@ server that offers an API and a simple web interface.
 
 ## Preparation
 
-> This is outdated. (Should be updated by Joe Molloy ;)
-
 All data preparation is found in `/preparation`. In principle, the script
 `/preparation/prepare.sh` should do all the work. It requires four input
 parameters, which are:
@@ -60,6 +58,14 @@ mvn -Pstandalone package
 
 The resulting jar will be in `target/ch_pt_utils-{VERSION}.jar`. It can be used
 to start, for instance, the batch router or the web service.
+
+## GLPK
+
+The calculation of optimal ticket prices requires a working installation of [GLPK for Java][2]. Note
+that for linux is usually necessary to build it manually and put it for instance in `~/glpk`.
+
+The IVT servers have an old version of GLPK (4.53) which does not work with the latest GLPK for Java, or this codebase. The above link is somewhat out of date, and at the following file provides a script which will install GLPK on the IVT servers [install_glpk.sh](install_glpk.sh). If you get GLPK related errors when starting the server, then try installing GLPK correctly.
+
 
 ### Batch router
 
@@ -146,8 +152,7 @@ a number of input arguments:
 4. Path to `stations.geojson` (from the preparation output)
 5. Path to `t603.csv` (from the preparation output)
 
-Furthermore, the server requires a working installation of [GLPK for Java][2]. Note
-that it is usually necessary to build it manually and put it for instance in `~/glpk`.
+In addition, a JVM argument (java.library.path) is required to indicate where the glpk java libraries can be found. This is generally `~/glpk_location/lib/jni` with glpk_location replaced by the location of your glpk installtion
 
 An example how to run:
 
@@ -160,6 +165,20 @@ to contact the API directly, e.g.:
 
 ```
 curl -X POST -H "Content-Type:application/json" http://localhost:7050/api -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0}]}'
+```
+
+#### Trip frequency calculation
+
+Additional parameters to each trip in the "trips" list either disable trip frequency calculation - which improves the speed, or sets the time window for which to calculate the frequency. This is useful if the trip starts early or late in the day, as with the default settings, the frequency is calculated using a 1 hour window around the trip start time. Frequency calculation is enabled by default.
+
+```
+curl -X POST -H "Content-Type:application/json" http://localhost:7050/api -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0, "calculateFrequency" = false}]}'
+```
+
+The following will use the window from 12pm to 2pm for the calculation of the frequency:
+
+```
+curl -X POST -H "Content-Type:application/json" http://localhost:7050/api -d '{"trips": [{"originLatitude" : 47.409311, "originLongitude" : 8.506979, "destinationLatitude" : 47.412746, "destinationLongitude" : 9.438905, "departureTime" : 32400.0, "frequencyWindowStart" = 43200, "frequencyWindowEnd" = 50400 }]}'
 ```
 
 [1]: https://pypi.org/project/stapler/
