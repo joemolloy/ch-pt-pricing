@@ -9,8 +9,10 @@ INSTALL_DIRECTORY=/nas/$USER/glpk
 export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
 
 # Download source code
+
 mkdir -p /nas/$USER/src
 cd /nas/$USER/src
+
 rm -rf glpk-glpk_4_65*
 wget http://ftp.gnu.org/gnu/glpk/glpk-4.65.tar.gz
 tar -xzf glpk-4.65.tar.gz
@@ -28,6 +30,7 @@ make install
 
 # Build and install GLPK for Java
 cd /nas/$USER/src/libglpk-java-1.12.0
+
 export CPPFLAGS=-I$INSTALL_DIRECTORY/include
 export SWIGFLAGS=-I$INSTALL_DIRECTORY/include
 export LD_LIBRARY_PATH=$INSTALL_DIRECTORY/lib
