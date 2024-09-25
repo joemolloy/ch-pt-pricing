@@ -3,17 +3,16 @@ package ch.ethz.matsim.ch_pt_utils.cost.stages;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Leg;
-import org.matsim.api.core.v01.population.PlanElement;
-import org.matsim.pt.transitSchedule.api.Departure;
+import org.matsim.pt.routes.TransitPassengerRoute;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
-import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
+import org.matsim.pt.transitSchedule.api.TransitStopFacility;
 
-import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRoute;
 import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
 
 public class TransitStageTransformer {
@@ -25,43 +24,34 @@ public class TransitStageTransformer {
 		this.transitModes = ScheduleUtils.getVehicleModes(schedule);
 	}
 
-	public List<TransitStage> getStages(List<? extends PlanElement> elements) {
+	public List<TransitStage> getStages(Collection<Leg> elements) {
 		List<TransitStage> stages = new LinkedList<>();
 
-		for (PlanElement element : elements) {
-			if (element instanceof Leg) {
-				Leg leg = (Leg) element;
+		for (Leg leg : elements) {
+			if (leg.getMode().equals(TransportMode.pt) || transitModes.contains(leg.getMode())) {
+				TransitPassengerRoute route = (TransitPassengerRoute) leg.getRoute();
+				TransitLine transitLine = schedule.getTransitLines().get(route.getLineId());
+				TransitRoute transitRoute = transitLine.getRoutes().get(route.getRouteId());
 
-				if (leg.getMode().equals(TransportMode.pt) || transitModes.contains(leg.getMode())) {
-					EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
+				TransitStopFacility accessStop = schedule.getFacilities().get(route.getAccessStopId());
+				TransitStopFacility egressStop = schedule.getFacilities().get(route.getEgressStopId());
 
-					int accessStopIndex = route.getAccessStopIndex();
-					int egressStopIndex = route.getEgressStopIndex();
+				double accessDepartureTime = route.getBoardingTime().orElse(0);
+				double egressArrivalTime = accessDepartureTime + route.getTravelTime().orElse(0);
 
-					TransitLine transitLine = schedule.getTransitLines().get(route.getTransitLineId());
-					TransitRoute transitRoute = transitLine.getRoutes().get(route.getTransitRouteId());
+				Stream<TransitStopFacility> intermediateStops = transitRoute.getStops().stream().map(x -> x.getStopFacility())
+						.dropWhile(x -> (!x.equals(accessStop))).takeWhile(x -> (!x.equals(egressStop)));
 
-					Departure departure = transitRoute.getDepartures().get(route.getDepartureId());
+				intermediateStops = Stream.concat(intermediateStops, Stream.of(egressStop));
 
-					TransitRouteStop accessStop = transitRoute.getStops().get(accessStopIndex);
-					TransitRouteStop egressStop = transitRoute.getStops().get(egressStopIndex);
+				List<Long> hafasIds = intermediateStops.map(stop -> {
+					long hafasStopId = Long.parseLong(stop.getId().toString().split("\\.")[0]);
+					return hafasStopId;
+				}).toList();
 
-					double accessDepartureTime = accessStop.getDepartureOffset() + departure.getDepartureTime();
-					double egressArrivalTime = egressStop.getArrivalOffset() + departure.getDepartureTime();
-
-					List<Long> hafasIds = new LinkedList<>();
-
-					for (int stopIndex = accessStopIndex; stopIndex <= egressStopIndex; stopIndex++) {
-						TransitRouteStop stop = transitRoute.getStops().get(stopIndex);
-
-						long hafasStopId = Long.parseLong(stop.getStopFacility().getId().toString().split("\\.")[0]);
-						hafasIds.add(hafasStopId);
-					}
-
-					TransitStage stage = new TransitStage(hafasIds, route.getDistance(), accessDepartureTime,
-							egressArrivalTime, transitRoute.getTransportMode());
-					stages.add(stage);
-				}
+				TransitStage stage = new TransitStage(hafasIds, route.getDistance(), accessDepartureTime,
+						egressArrivalTime, transitRoute.getTransportMode());
+				stages.add(stage);
 			}
 		}
 

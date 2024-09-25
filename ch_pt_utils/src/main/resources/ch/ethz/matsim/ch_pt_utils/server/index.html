@@ -24,6 +24,10 @@
                 display: block;
             }
 
+            .upper {
+                height: 600px;
+            }
+
             #map {
                 width: 50%;
                 display: block;
@@ -45,7 +49,7 @@
 
             #tickets {
                 display: block;
-                width: 50%;
+                width: 100%;
             }
 
             #tickets .ticket {
@@ -130,52 +134,54 @@
     </head>
     <body>
         <div id="app">
-            <div id="map"></div>
-            <div id="trips">
-                <div v-for="(trip, index) in trips" class="trip" v-on:click="selectTrip(index)" v-bind:class="{ selected: selectedTripIndex == index, active: trip.active }">
-                    <div><span class="origin">Origin</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].originStreetName }}</template><template v-else>{{ trip.originLatLng }}</template></div>
-                    <div><span class="destination">Destination</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].destinationStreetName }}</template><template v-else>{{ trip.destinationLatLng }}</template></div>
-                    <div>
-                        Departure time: <input v-model="trip.plainDepartureTime" v-on:keyup="changeDepartureTime()" />
-                        <div style="color:red;" v-if="parseTime(trip.plainDepartureTime) == -1">Invalid departure time</div>
+            <div class="uppper" style="height:600px">
+                <div id="map"></div>
+                <div id="trips">
+                    <div v-for="(trip, index) in trips" class="trip" v-on:click="selectTrip(index)" v-bind:class="{ selected: selectedTripIndex == index, active: trip.active }">
+                        <div><span class="origin">Origin</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].originStreetName }}</template><template v-else>{{ trip.originLatLng }}</template></div>
+                        <div><span class="destination">Destination</span>: <template v-if="index < planResponse.trips.length">{{ planResponse.trips[index].destinationStreetName }}</template><template v-else>{{ trip.destinationLatLng }}</template></div>
+                        <div>
+                            Departure time: <input v-model="trip.plainDepartureTime" v-on:keyup="changeDepartureTime()" />
+                            <div style="color:red;" v-if="parseTime(trip.plainDepartureTime) == -1">Invalid departure time</div>
+                        </div>
+                        <a v-if="selectedTripIndex == index" href="#" v-on:click.stop="removeSelectedTrip()">Remove</a>
+                        <a href="#" v-if="selectedTripIndex == index && !trip.active" v-on:click.stop="activateTrip()">Activate</a>
+                        <a href="#" v-if="selectedTripIndex == index && trip.active" v-on:click.stop="deactivateTrip()">Deactivate</a>
                     </div>
-                    <a v-if="selectedTripIndex == index" href="#" v-on:click.stop="removeSelectedTrip()">Remove</a>
-                    <a href="#" v-if="selectedTripIndex == index && !trip.active" v-on:click.stop="activateTrip()">Activate</a>
-                    <a href="#" v-if="selectedTripIndex == index && trip.active" v-on:click.stop="deactivateTrip()">Deactivate</a>
-                </div>
-                <div style="padding: 10px;">
-                    <a href="#" v-on:click.stop="addTrip()">Add trip</a><br /><br />
-                    <a href="#" v-on:click.stop="saveStorage()">Save to storage</a><br />
-                    <a href="#" v-if="storageExists" v-on:click.stop="loadStorage()">Load from storage</a>
-                </div>
-            </div>
-            <div id="itinerary">
-                <div class="it_trip" v-for="trip in planResponse.trips">
-                    <div class="it_stage" v-for="stage in trip.stages">
-                        <span class="st">
-                            <template class="outer" v-if="stage.type == 'pt'">
-                                <template class="inner" v-if="stage.transportMode == 'rail'">
-                                    <i key="train" class="fa fa-train" aria-hidden="true"></i>
-                                </template>
-                                <template class="inner" v-else-if="stage.transportMode == 'tram'">
-                                    <i key="subway" class="fa fa-subway" aria-hidden="true"></i>
-                                </template>
-                                <template class="inner" v-else>
-                                    <i key="bus" class="fa fa-bus" aria-hidden="true"></i>
-                                </template>
-                                {{ stage.originName }}
-                                <i key="arrow" class="fa fa-arrow-right" aria-hidden="true"></i>
-                                {{ stage.destinationName }} <br />
-                                &nbsp; &nbsp;{{ stage.path.length - 1 }} stops, {{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min
-                                @ {{ writeTime(stage.departureTime) }}
-                            </template>
-                            <template class="outer" v-else-if="stage.type == 'walk'">
-                                <i key="walk" class="fa fa-shoe-prints" aria-hidden="true"></i> Walking ({{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min, {{ Math.ceil(stage.distance) }}m)
-                            </template>
-                            <template class="outer" v-else></template>
-                        </span>
+                    <div style="padding: 10px;">
+                        <a href="#" v-on:click.stop="addTrip()">Add trip</a><br /><br />
+                        <a href="#" v-on:click.stop="saveStorage()">Save to storage</a><br />
+                        <a href="#" v-if="storageExists" v-on:click.stop="loadStorage()">Load from storage</a>
                     </div>
-                    Frequency: {{trip.frequency}}
+                </div>
+                <div id="itinerary">
+                    <div class="it_trip" v-for="trip in planResponse.trips">
+                        <div class="it_stage" v-for="stage in trip.stages">
+                            <span class="st">
+                                <template class="outer" v-if="stage.type == 'pt'">
+                                    <template class="inner" v-if="stage.transportMode == 'rail'">
+                                        <i key="train" class="fa fa-train" aria-hidden="true"></i>
+                                    </template>
+                                    <template class="inner" v-else-if="stage.transportMode == 'tram'">
+                                        <i key="subway" class="fa fa-subway" aria-hidden="true"></i>
+                                    </template>
+                                    <template class="inner" v-else>
+                                        <i key="bus" class="fa fa-bus" aria-hidden="true"></i>
+                                    </template>
+                                    {{ stage.originName }}
+                                    <i key="arrow" class="fa fa-arrow-right" aria-hidden="true"></i>
+                                    {{ stage.destinationName }} <br />
+                                    &nbsp; &nbsp;{{ stage.path.length - 1 }} stops, {{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min
+                                    @ {{ writeTime(stage.departureTime) }}
+                                </template>
+                                <template class="outer" v-else-if="stage.type == 'walk'">
+                                    <i key="walk" class="fa fa-shoe-prints" aria-hidden="true"></i> Walking ({{ Math.ceil((stage.arrivalTime - stage.departureTime) / 60) }} min, {{ Math.ceil(stage.distance) }}m)
+                                </template>
+                                <template class="outer" v-else></template>
+                            </span>
+                        </div>
+                        Frequency: {{trip.frequency}}
+                    </div>
                 </div>
             </div>
             <div id="tickets">
@@ -368,7 +374,10 @@
                         this.performRouting();
                     },
                     _performRouting: function() {
-                        var request = { trips: [] };
+                        var request = {
+                            trips: [],
+                            calculateFrequency: false
+                        };
 
                         for (var i in this.trips) {
                             var trip = this.trips[i];

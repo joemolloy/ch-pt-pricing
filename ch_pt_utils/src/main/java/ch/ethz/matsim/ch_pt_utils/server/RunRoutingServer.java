@@ -3,8 +3,9 @@ package ch.ethz.matsim.ch_pt_utils.server;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
-import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
 import org.geotools.referencing.CRS;
 import org.gnu.glpk.GLPK;
 import org.matsim.api.core.v01.Scenario;
@@ -12,12 +13,10 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.scenario.ScenarioUtils;
+import org.matsim.pt.transitSchedule.api.TransitLine;
+import org.matsim.pt.transitSchedule.api.TransitRoute;
 import org.matsim.pt.transitSchedule.api.TransitScheduleReader;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.operation.NoninvertibleTransformException;
 
-import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStageTransformer;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.TicketGenerator;
 import ch.ethz.matsim.ch_pt_utils.cost.tickets.zonal.data.Authority;
@@ -28,16 +27,27 @@ import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.Switzerland;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.Triangle;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleReader;
 import ch.ethz.matsim.ch_pt_utils.cost.use_cases.switzerland.sbb.data.TriangleRegistry;
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingParameters;
-import ch.ethz.matsim.ch_pt_utils.routing.RoutingToolbox;
 import ch.ethz.matsim.ch_pt_utils.server.routing.RoutingHandler;
+
+import ch.sbb.matsim.routing.pt.raptor.OccupancyData;
+import ch.sbb.matsim.routing.pt.raptor.RaptorStaticConfig;
+import ch.sbb.matsim.routing.pt.raptor.RaptorUtils;
+import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptor;
+import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorData;
 import io.javalin.Javalin;
 
 public class RunRoutingServer {
 	static public void main(String[] args)
-			throws NoSuchAuthorityCodeException, FactoryException, NoninvertibleTransformException, IOException {
+			throws Exception, IOException {
 
-		System.out.println(GLPK.glp_version());
+		try {
+			System.out.println(CRS.decode("EPSG:2056"));
+			System.out.println(GLPK.glp_version());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
 
 		int port = Integer.parseInt(args[0]);
 		File transitSchedulePath = new File(args[1]);
@@ -68,15 +78,24 @@ public class RunRoutingServer {
 		TicketGenerator ticketGenerator = Switzerland.createTicketGenerator(zonalRegistry, triangleRegistry);
 		TransitStageTransformer transformer = new TransitStageTransformer(scenario.getTransitSchedule());
 
-		RoutingParameters parameters = new RoutingParameters();
-		RoutingToolbox toolbox = new RoutingToolbox(parameters, scenario.getNetwork(), scenario.getTransitSchedule());
-		EnrichedTransitRouter enrichedTransitRouter = toolbox.getEnrichedTransitRouter();
-		FrequencyCalculator frequencyCalculator = toolbox.getFrequencyCalculator();
+		// Collect travel utilities
+		Set<String> transitModes = new HashSet<>();
+		for (TransitLine transitLine : scenario.getTransitSchedule().getTransitLines().values()) {
+			for (TransitRoute transitRoute : transitLine.getRoutes().values()) {
+				transitModes.add(transitRoute.getTransportMode());
+			}
+		}
+			
+		OccupancyData occupancyData = new OccupancyData();
+		RaptorStaticConfig srrStaticConfig = RaptorUtils.createStaticConfig(config);
+	
+		SwissRailRaptorData srrData = SwissRailRaptorData.create(scenario.getTransitSchedule(),
+				scenario.getTransitVehicles(), srrStaticConfig, scenario.getNetwork(), occupancyData);
+		SwissRailRaptor raptor = new SwissRailRaptor.Builder(srrData, config).build();
 
 		Javalin app = Javalin.create();
 		app.enableCorsForAllOrigins();
-		app.post("/api", new RoutingHandler(enrichedTransitRouter, scenario.getNetwork(), scenario.getTransitSchedule(),
-				ticketGenerator, transformer, frequencyCalculator, CRS.decode("EPSG:2056")));
+		app.post("/api", new RoutingHandler(raptor, ticketGenerator, scenario.getNetwork(), scenario.getTransitSchedule(), transformer, CRS.decode("EPSG:2056")));
 		app.get("/", new FrontendHandler());
 		app.start(port);
 	}

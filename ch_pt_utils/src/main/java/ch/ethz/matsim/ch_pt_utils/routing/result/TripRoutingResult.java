@@ -1,7 +1,5 @@
 package ch.ethz.matsim.ch_pt_utils.routing.result;
 
-import java.util.List;
-
 public class TripRoutingResult {
 	private final String tripId;
 

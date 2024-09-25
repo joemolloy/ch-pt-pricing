@@ -5,8 +5,8 @@ import java.io.StringWriter;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
-import ch.ethz.matsim.ch_pt_utils.FrequencyCalculator;
 import org.geotools.geometry.DirectPosition2D;
 import org.geotools.referencing.CRS;
 import org.matsim.api.core.v01.Coord;
@@ -19,8 +19,10 @@ import org.matsim.core.router.LinkWrapperFacility;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
-import org.matsim.pt.transitSchedule.api.TransitRouteStop;
+import org.matsim.pt.router.TransitRouter;
+import org.matsim.pt.routes.TransitPassengerRoute;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
+import org.matsim.pt.transitSchedule.api.TransitStopFacility;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.referencing.FactoryException;
@@ -30,9 +32,6 @@ import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.NoninvertibleTransformException;
 import org.opengis.referencing.operation.TransformException;
 
-import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRoute;
-import ch.ethz.matsim.baseline_scenario.transit.routing.EnrichedTransitRouter;
-import ch.ethz.matsim.ch_pt_utils.ScheduleUtils;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.Ticket;
 import ch.ethz.matsim.ch_pt_utils.cost.solver.TicketSolver;
 import ch.ethz.matsim.ch_pt_utils.cost.stages.TransitStage;
@@ -52,26 +51,24 @@ import io.javalin.Handler;
 public class RoutingHandler implements Handler {
 	private final MathTransform transform;
 	private final MathTransform backTransform;
-	private final Network network;
-	private final TransitSchedule schedule;
-	private final EnrichedTransitRouter enrichedTransitRouter;
+	private final TransitRouter transitRouter;
 	private final TicketGenerator ticketGenerator;
 	private final TransitStageTransformer transformer;
-	private final Collection<String> transitModes;
-	private final FrequencyCalculator frequencyCalculator;
+	private Network network;
+	private TransitSchedule schedule;
 
-	public RoutingHandler(EnrichedTransitRouter enrichedTransitRouter, Network network, TransitSchedule schedule,
-						  TicketGenerator ticketGenerator, TransitStageTransformer transformer, FrequencyCalculator frequencyCalculator, CoordinateReferenceSystem scheduleCRS)
+	public RoutingHandler(TransitRouter transitRouter,
+						  TicketGenerator ticketGenerator, Network network, TransitSchedule scheudle,
+						  TransitStageTransformer transformer, CoordinateReferenceSystem scheduleCRS)
 			throws NoSuchAuthorityCodeException, FactoryException, NoninvertibleTransformException {
-		this.transform = CRS.findMathTransform(CRS.decode("EPSG:4326"), scheduleCRS);
+
 		this.network = network;
-		this.enrichedTransitRouter = enrichedTransitRouter;
-		this.schedule = schedule;
+		this.schedule = scheudle;
+		this.transform = CRS.findMathTransform(CRS.decode("EPSG:4326"), scheduleCRS);
+		this.transitRouter = transitRouter;
 		this.backTransform = transform.inverse();
 		this.ticketGenerator = ticketGenerator;
 		this.transformer = transformer;
-		this.frequencyCalculator = frequencyCalculator;
-		this.transitModes = ScheduleUtils.getVehicleModes(schedule);
 	}
 
 	@Override
@@ -104,29 +101,12 @@ public class RoutingHandler implements Handler {
 				Link originLink = NetworkUtils.getNearestLink(network, originCoord);
 				Link destinationLink = NetworkUtils.getNearestLink(network, destinationCoord);
 
-				Facility<?> originFacility = new LinkWrapperFacility(originLink);
-				Facility<?> destinationFacility = new LinkWrapperFacility(destinationLink);
+				Facility originFacility = new LinkWrapperFacility(originLink);
+				Facility destinationFacility = new LinkWrapperFacility(destinationLink);
 
-				double departureTime = tripRequest.departureTime;
+				List<Leg> legs = transitRouter.calcRoute(originFacility, destinationFacility, tripRequest.departureTime, null);
 
-				List<Leg> legs = enrichedTransitRouter.calculateRoute(originFacility, destinationFacility,
-						departureTime, null);
-
-				double frequency = -1;
-				double frequencyWindowStart = planRequest.frequencyWindowStart;
-				if (planRequest.calculateFrequency) {
-					if (frequencyWindowStart == -1 ) {
-						frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
-								departureTime);
-					} else {
-						frequency = frequencyCalculator.calculateFrequency(originFacility, destinationFacility,
-								(frequencyWindowStart + planRequest.frequencyWindowEnd) / 2,
-								frequencyWindowStart, planRequest.frequencyWindowEnd);
-					}
-
-				}
-
-				TripResponse tripResponse = createTripResponse(legs, originLink, destinationLink, frequency);
+				TripResponse tripResponse = createTripResponse(legs, originLink, destinationLink, 0);
 				planResponse.trips.add(tripResponse);
 
 				transitStages.addAll(transformer.getStages(legs));
@@ -165,7 +145,7 @@ public class RoutingHandler implements Handler {
 		}
 	}
 
-	private TripResponse createTripResponse(List<Leg> legs, Link originLink, Link destinationLink, double frequency)
+	private TripResponse createTripResponse(Collection<Leg> legs, Link originLink, Link destinationLink, double frequency)
 			throws MismatchedDimensionException, TransformException {
 		TripResponse tripResponse = new TripResponse();
 
@@ -182,44 +162,55 @@ public class RoutingHandler implements Handler {
 		}
 
 		for (Leg leg : legs) {
-			if (leg.getMode().equals(TransportMode.pt) || transitModes.contains(leg.getMode())) {
+			System.out.println(leg);
+			System.out.println(leg.getMode());
+			if (leg.getMode().equals(TransportMode.pt)) {
 				TransitStageResponse stageResponse = new TransitStageResponse();
-				EnrichedTransitRoute route = (EnrichedTransitRoute) leg.getRoute();
+				TransitPassengerRoute route = (TransitPassengerRoute) leg.getRoute();
 
-				stageResponse.departureTime = leg.getDepartureTime();
-				stageResponse.arrivalTime = leg.getDepartureTime() + leg.getTravelTime();
+				stageResponse.departureTime = leg.getDepartureTime().seconds();
+				stageResponse.arrivalTime = leg.getDepartureTime().seconds() + leg.getTravelTime().seconds();
 
-				TransitLine transitLine = schedule.getTransitLines().get(route.getTransitLineId());
-				TransitRoute transitRoute = transitLine.getRoutes().get(route.getTransitRouteId());
+				TransitLine transitLine = schedule.getTransitLines().get(route.getLineId());
+				TransitRoute transitRoute = transitLine.getRoutes().get(route.getRouteId());
+				
+				TransitStopFacility originStop = schedule.getFacilities().get(route.getAccessStopId());
+				TransitStopFacility destinationStop = schedule.getFacilities().get(route.getEgressStopId());
 
-				TransitRouteStop originStop = transitRoute.getStops().get(route.getAccessStopIndex());
-				TransitRouteStop destinationStop = transitRoute.getStops().get(route.getEgressStopIndex());
 
 				stageResponse.lineName = transitRoute.getDescription();
-				stageResponse.originName = originStop.getStopFacility().getName();
-				stageResponse.destinationName = destinationStop.getStopFacility().getName();
+				stageResponse.originName = originStop.getName();
+				stageResponse.destinationName = destinationStop.getName();
 				stageResponse.transportMode = transitRoute.getTransportMode();
 
-				for (int index = route.getAccessStopIndex(); index <= route.getEgressStopIndex(); index++) {
-					TransitRouteStop stop = transitRoute.getStops().get(index);
-					Coord stopCoord = stop.getStopFacility().getCoord();
+				Stream<TransitStopFacility> intermediateStops = transitRoute.getStops().stream().map(x -> x.getStopFacility())
+						.dropWhile(x -> (!x.equals(originStop))).takeWhile(x -> (!x.equals(destinationStop)));
+
+				intermediateStops = Stream.concat(intermediateStops, Stream.of(destinationStop));
+
+				Stream<CoordinateResponse> path = intermediateStops.map(stop -> {
+					Coord stopCoord = stop.getCoord();
 
 					DirectPosition stopCoordinate = new DirectPosition2D(stopCoord.getX(), stopCoord.getY());
 					DirectPosition stopWGS48 = new DirectPosition2D();
-
-					backTransform.transform(stopCoordinate, stopWGS48);
-
+					try{
+						backTransform.transform(stopCoordinate, stopWGS48);
+					} catch (TransformException e) {
+						throw new RuntimeException(e);
+					}
 					CoordinateResponse coordinateResponse = new CoordinateResponse();
 					coordinateResponse.latitude = stopWGS48.getCoordinate()[0];
 					coordinateResponse.longitude = stopWGS48.getCoordinate()[1];
-					stageResponse.path.add(coordinateResponse);
-				}
+					return coordinateResponse;
+				});
+
+				stageResponse.path = path.toList();
 
 				tripResponse.stages.add(stageResponse);
 			} else {
 				WalkStageResponse stageResponse = new WalkStageResponse();
-				stageResponse.departureTime = leg.getDepartureTime();
-				stageResponse.arrivalTime = leg.getDepartureTime() + leg.getTravelTime();
+				stageResponse.departureTime = leg.getDepartureTime().orElse(0);
+				stageResponse.arrivalTime = stageResponse.departureTime + leg.getTravelTime().orElse(0);
 				stageResponse.distance = leg.getRoute().getDistance();
 				tripResponse.stages.add(stageResponse);
 			}

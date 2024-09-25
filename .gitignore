@@ -7,4 +7,9 @@ __pycache__
 /temp/
 /output/
 idea/
+.idea/
+*.jar
 *.iml
+.DS_Store
+.ipynb_checkpoints/
+.vscode/
