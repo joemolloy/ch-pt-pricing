@@ -2,6 +2,14 @@
 
 ![Zone assignment](docs/zone_assignment.png)
 
+> [!IMPORTANT]  
+> This repository has been forked from the now inactive repository
+> [https://gitlab.ethz.ch/ivt-vpl/populations/ch-pt-utils]
+> Please see the presentation [https://www.strc.ch/2019/Hoerl_Molloy.pdf] for the background
+> 
+> It has has also been trimmed to remove some of the routing interfaces, and focus on the pricing part.
+
+> [!NOTE]  
 > DISCLAIMER: This documentation is written from the perspective of the Switzerland
 > MATSim scenario. However, all of these tools are useful for other use cases as
 > well, e.g. Sao Paulo or Paris. At the moment, all components are rather generic
